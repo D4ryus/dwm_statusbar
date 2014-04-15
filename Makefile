@@ -3,7 +3,7 @@
 # X11 libs needed
 # vim:noexpandtab
 
-FLAGS = -lX11 -lasound
+FLAGS = -lX11 -lasound -lpthread
 
-main: main.c
-	gcc main.c -o main ${FLAGS}
+dwm_statusbar: dwm_statusbar.c
+	gcc dwm_statusbar.c -o dwm_statusbar ${FLAGS}
