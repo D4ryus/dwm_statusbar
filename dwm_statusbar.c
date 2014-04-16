@@ -4,91 +4,12 @@
  * also thanks to Yu-Jie Lin, most of the alsa code is from him.
  * vim:ts=4:sw=4:ai:
  */
-
-/* std inputs */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-/* input to display error messages */
-#include <errno.h>
-/* Alsa sound includes to get volume */
-#include <alsa/asoundlib.h>
-/* Xlibs to connect to xserver */
-#include <X11/Xlib.h>
-/* input to get current time */
-#include <time.h>
-/* network includes, needed to display ip adress */
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <netdb.h>
-
-/* will be known by compile time */
-const static char* BATTERY_STATUS  = "/sys/class/power_supply/BAT0/status";
-const static char* BATTERY_FULL    = "/sys/class/power_supply/BAT0/energy_full";
-const static char* BATTERY_NOW     = "/sys/class/power_supply/BAT0/energy_now";
-const static char* RAM             = "/proc/meminfo";
-const static char* WIFI_INTERFACE  = "wlp3s0";   // max 10 charscters
-const static char* CABLE_INTERFACE = "enp0s25";  // max 10 characters
-
-const static char* displayed_begin        = "[";
-const static char* displayed_between      = "] [";
-const static char* displayed_end          = "]";
-const static char* displayed_ip_info      = "";
-const static char* displayed_battery_info = "bat: ";
-const static char* displayed_ram_info     = "ram: ";
-const static char* displayed_time_info    = "";
-const static char* displayed_sound_info   = "vol: ";
-
-static int   fast_refresh_flag = 0;
-const static int   fast_refresh  = 200000;
-
-const static int   update_sleep  = 1;
-const static int   ip_sleep      = 1;
-const static int   battery_sleep = 60;
-const static int   ram_sleep     = 5;
-const static int   time_sleep    = 60;
-const static int   sound_sleep   = 1;
-
-/* will be set by init() */
-static int         energy_full;
-static Display*    display;
-
-/* will be updated during execution */
-static char        displayed_text[512];
-
-static char        displayed_battery[17];
-static char        displayed_ram[12];
-static char        displayed_time[17];
-static char        displayed_ip_wifi[30];
-static char        displayed_ip_cable[30];
-static char        displayed_sound[9];
+#include "dwm_statusbar.h"
 
 void error(char *msg)
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
     exit(1);
-}
-
-void init()
-{
-    if (!(display = XOpenDisplay(NULL)))
-    {
-        error("Cannot open display");
-    }
-    FILE* fd;
-    fd = fopen(BATTERY_FULL, "r");
-    if(fd == NULL)
-    {
-        error("Error opening energy_full");
-    }
-    fscanf(fd, "%d", &energy_full);
-    fclose(fd);
 }
 
 void *update_time(void * val)
@@ -106,10 +27,17 @@ void *update_time(void * val)
 
 void *update_battery(void * val)
 {
+    FILE* fd;
+    int energy_full;
     int  battery_percentage;
     int  energy_now;
     char energy_status[12];
-    FILE *fd;
+    fd = fopen(BATTERY_FULL, "r");
+    if(fd == NULL)
+        error("Error opening energy_full");
+
+    fscanf(fd, "%d", &energy_full);
+    fclose(fd);
     while(1)
     {
         fd = fopen(BATTERY_NOW, "r");
@@ -314,6 +242,10 @@ void *update_sound(void * val)
 
 void *update_status(void * val)
 {
+    Display* display;
+    if (!(display = XOpenDisplay(NULL)))
+        error("Cannot open display");
+
     while(1)
     {
         sprintf(displayed_text,
@@ -347,12 +279,11 @@ void *update_status(void * val)
             sleep(update_sleep);
         }
     }
+    XCloseDisplay(display);
 }
 
 int main ()
 {
-
-    init();
 
     pthread_t time_thread;
     pthread_t battery_thread;
@@ -386,6 +317,5 @@ int main ()
     pthread_join( sound_thread,   NULL);
     pthread_join( status_thread,  NULL);
 
-    XCloseDisplay(display);
     return 0;
 }
