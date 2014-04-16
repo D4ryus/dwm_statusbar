@@ -14,6 +14,7 @@ void error(char *msg)
 
 void *update_time(void * val)
 {
+    usleep(rand() % 100000);
     struct tm*  timeinfo;
     time_t      rawtime;
     while(1)
@@ -21,12 +22,14 @@ void *update_time(void * val)
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         strncpy(displayed_time, asctime(timeinfo), 16);
+        printf("time\n");
         sleep(time_sleep);
     }
 }
 
 void *update_battery(void * val)
 {
+    usleep(rand() % 100000);
     FILE* fd;
     int energy_full;
     int  battery_percentage;
@@ -60,12 +63,14 @@ void *update_battery(void * val)
 
         sprintf(displayed_battery, "%s %d%s", energy_status, battery_percentage, "%");
 
+        printf("battery\n");
         sleep(battery_sleep);
     }
 }
 
 void *update_ram(void * val)
 {
+    usleep(rand() % 100000);
     int  ram_total;
     int  ram_available;
     int  ram_free;
@@ -88,6 +93,7 @@ void *update_ram(void * val)
         ram_available /= 1000;
         ram_used = ram_total - ram_available;
 
+        printf("ram\n");
         sprintf(displayed_ram, "%d/%d", ram_used, ram_total);
         sleep(ram_sleep);
     }
@@ -95,6 +101,7 @@ void *update_ram(void * val)
 
 void *update_ip(void * val)
 {
+    usleep(rand() % 100000);
     char         wifi_ip[17];
     char         cable_ip[17];
     int wifi_connected  = 0; // just boolean flag
@@ -171,6 +178,7 @@ void *update_ip(void * val)
             displayed_ip_cable[0] = '\0'; // no cable assigned
 
         }
+    printf("ip\n");
         sleep(ip_sleep);
     }
 }
@@ -179,13 +187,13 @@ void *update_sound(void * val)
 {
     int  err;
     int  switch_value;
-    int  switch_value_backup;
+    int  switch_value_backup = -1;
     int  count = 0;
     long vol;
     long vol_min;
     long vol_max;
     float volume;
-    float volume_backup;
+    float volume_backup = -1.0;
     snd_mixer_t          *h_mixer;
     snd_mixer_selem_id_t *sid;
     snd_mixer_elem_t     *elem;
@@ -218,16 +226,19 @@ void *update_sound(void * val)
 
         volume = 100.0 * vol / vol_max;
 
-        if(volume != volume_backup || switch_value != switch_value_backup)
+        printf("sound volume: %f, %f, %d, %d\n", volume, volume_backup, switch_value, switch_value_backup);
+        if((volume != volume_backup) || (switch_value != switch_value_backup))
         {
             count = 10;
             fast_refresh_flag = 1;
+            printf("sound\n");
             sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", volume);
         } else {
             count--;
         }
 
         volume_backup = volume;
+        switch_value_backup = switch_value;
 
         if (count > 0)
         {
@@ -269,6 +280,7 @@ void *update_status(void * val)
                 displayed_end
                );
         XStoreName(display, DefaultRootWindow(display), displayed_text);
+        printf("status\n");
         XSync(display, False);
 
         if( fast_refresh_flag == 1 )
