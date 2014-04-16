@@ -45,6 +45,9 @@ const static char* displayed_ram_info     = "ram: ";
 const static char* displayed_time_info    = "";
 const static char* displayed_sound_info   = "vol: ";
 
+static int   fast_refresh_flag = 0;
+const static int   fast_refresh  = 200000;
+
 const static int   update_sleep  = 1;
 const static int   ip_sleep      = 1;
 const static int   battery_sleep = 60;
@@ -66,33 +69,34 @@ static char        displayed_ip_wifi[30];
 static char        displayed_ip_cable[30];
 static char        displayed_sound[9];
 
-/*
- * prints errormessages, will exit the programm.
- */
-void error(char *msg) {
+void error(char *msg)
+{
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
     exit(1);
 }
 
-/* set all values which will not change during updates */
-void init() {
-    if (!(display = XOpenDisplay(NULL))) {
+void init()
+{
+    if (!(display = XOpenDisplay(NULL)))
+    {
         error("Cannot open display");
     }
     FILE* fd;
     fd = fopen(BATTERY_FULL, "r");
-    if(fd == NULL) {
+    if(fd == NULL)
+    {
         error("Error opening energy_full");
     }
     fscanf(fd, "%d", &energy_full);
     fclose(fd);
 }
 
-void *update_time(void * val) {
-    while(1) {
-        struct tm*  timeinfo;
-        time_t      rawtime;
-
+void *update_time(void * val)
+{
+    struct tm*  timeinfo;
+    time_t      rawtime;
+    while(1)
+    {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         strncpy(displayed_time, asctime(timeinfo), 16);
@@ -100,22 +104,25 @@ void *update_time(void * val) {
     }
 }
 
-void *update_battery(void * val) {
-    while(1) {
-        int  battery_percentage;
-        int  energy_now;
-        char energy_status[12];
-        FILE *fd;
-
+void *update_battery(void * val)
+{
+    int  battery_percentage;
+    int  energy_now;
+    char energy_status[12];
+    FILE *fd;
+    while(1)
+    {
         fd = fopen(BATTERY_NOW, "r");
-        if(fd == NULL) {
+        if(fd == NULL)
+        {
             error("Error opening energy_now");
         }
         fscanf(fd, "%d", &energy_now);
         fclose(fd);
 
         fd = fopen(BATTERY_STATUS, "r");
-        if(fd == NULL) {
+        if(fd == NULL)
+        {
             error("Error opening energy_status");
         }
         fscanf(fd, "%s", &energy_status);
@@ -124,22 +131,24 @@ void *update_battery(void * val) {
         battery_percentage = (int)((((float)energy_now) / ((float)energy_full) * 100.0) + 0.5);
 
         sprintf(displayed_battery, "%s %d%s", energy_status, battery_percentage, "%");
+
         sleep(battery_sleep);
     }
 }
 
-void *update_ram(void * val) {
-    while(1) {
-        int  ram_total;
-        int  ram_available;
-        int  ram_free;
-        int  ram_used;
-        char buffer[64];
-        FILE *fd;
-
+void *update_ram(void * val)
+{
+    int  ram_total;
+    int  ram_available;
+    int  ram_free;
+    int  ram_used;
+    char buffer[64];
+    FILE *fd;
+    while(1)
+    {
         fd = fopen(RAM, "r");
-
-        if(fd == NULL) {
+        if(fd == NULL)
+        {
             error("Error opening meminfo");
         }
         fscanf(fd, "%s %d %s", &buffer, &ram_total,  &buffer);
@@ -156,16 +165,17 @@ void *update_ram(void * val) {
     }
 }
 
-void *update_ip(void * val) {
-    while(1) {
-        char         wifi_ip[17];
-        char         cable_ip[17];
-        int wifi_connected  = 0; // just boolean flag
-        int cable_connected = 0; // just boolean flag
-        int          fd;
-        struct ifreq ifr_wifi;
-        struct ifreq ifr_cable;
-
+void *update_ip(void * val)
+{
+    char         wifi_ip[17];
+    char         cable_ip[17];
+    int wifi_connected  = 0; // just boolean flag
+    int cable_connected = 0; // just boolean flag
+    int          fd;
+    struct ifreq ifr_wifi;
+    struct ifreq ifr_cable;
+    while(1)
+    {
         //Type of address to retrieve - IPv4 IP address
         ifr_wifi.ifr_addr.sa_family  = AF_INET;
         ifr_cable.ifr_addr.sa_family = AF_INET;
@@ -193,35 +203,41 @@ void *update_ip(void * val) {
          * will take a look into it when i have time.
          */
         if( ( w1 == 0   && w2 == 0  && w3 == 0   && w4 == 0   ) ||
-            ( w1 == 118 && w2 == 97 && w3 == 105 && w4 == 108 ) ) {
+                ( w1 == 118 && w2 == 97 && w3 == 105 && w4 == 108 ) )
+        {
             wifi_connected = 0;
         } else {
             wifi_connected = 1;
         }
 
-        if( c1 == 0 && c2 == 0 && c3 == 0 && c4 == 0 ) {
+        if( c1 == 0 && c2 == 0 && c3 == 0 && c4 == 0 )
+        {
             cable_connected = 0;
         } else {
             cable_connected = 1;
         }
 
 
-        if        ( wifi_connected &&  cable_connected ) {
+        if        ( wifi_connected &&  cable_connected )
+        {
 
             sprintf(displayed_ip_wifi, "%s: %s", WIFI_INTERFACE, wifi_ip);
-            sprintf(displayed_ip_cable, "%s: %s", CABLE_INTERFACE, cable_ip);
+            sprintf(displayed_ip_cable, " %s: %s", CABLE_INTERFACE, cable_ip);
 
-        } else if ( wifi_connected && !cable_connected ) {
+        } else if ( wifi_connected && !cable_connected )
+        {
 
             sprintf(displayed_ip_wifi, "%s: %s", WIFI_INTERFACE, wifi_ip);
             displayed_ip_cable[0] = '\0'; // no cable assigned
 
-        } else if (!wifi_connected &&  cable_connected ) {
+        } else if (!wifi_connected &&  cable_connected )
+        {
 
             displayed_ip_wifi[0] = '\0'; // no wifi assigned
             sprintf(displayed_ip_cable, "%s: %s", CABLE_INTERFACE, cable_ip);
 
-        } else if (!wifi_connected && !cable_connected ) {
+        } else if (!wifi_connected && !cable_connected )
+        {
 
             strncpy(displayed_ip_wifi, "not connected", 13);
             displayed_ip_cable[0] = '\0'; // no cable assigned
@@ -231,17 +247,22 @@ void *update_ip(void * val) {
     }
 }
 
-void *update_sound(void * val) {
-    while(1) {
-        int  err;
-        int  switch_value;
-        long vol;
-        long vol_min;
-        long vol_max;
-        snd_mixer_t          *h_mixer;
-        snd_mixer_selem_id_t *sid;
-        snd_mixer_elem_t     *elem ;
-
+void *update_sound(void * val)
+{
+    int  err;
+    int  switch_value;
+    int  switch_value_backup;
+    int  count = 0;
+    long vol;
+    long vol_min;
+    long vol_max;
+    float volume;
+    float volume_backup;
+    snd_mixer_t          *h_mixer;
+    snd_mixer_selem_id_t *sid;
+    snd_mixer_elem_t     *elem;
+    while(1)
+    {
         if (snd_mixer_open(&h_mixer, 1) < 0)
             error("Alsa_Mixer open error");
 
@@ -267,43 +288,69 @@ void *update_sound(void * val) {
 
         snd_mixer_close(h_mixer);
 
-        sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", 100.0 * vol / vol_max);
-        sleep(sound_sleep);
+        volume = 100.0 * vol / vol_max;
+
+        if(volume != volume_backup || switch_value != switch_value_backup)
+        {
+            count = 10;
+            fast_refresh_flag = 1;
+            sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", volume);
+        } else {
+            count--;
+        }
+
+        volume_backup = volume;
+
+        if (count > 0)
+        {
+            usleep(fast_refresh);
+            continue;
+        } else {
+            fast_refresh_flag = 0;
+            sleep(sound_sleep);
+        }
     }
 }
 
-/*
- * will set the XRootwindow with given string
- */
-void *update_status(void * val) {
-    while(1) {
+void *update_status(void * val)
+{
+    while(1)
+    {
         sprintf(displayed_text,
-            "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-            displayed_begin,
-            displayed_ip_info,
-            displayed_ip_wifi,
-            displayed_ip_cable,
-            displayed_between,
-            displayed_ram_info,
-            displayed_ram,
-            displayed_between,
-            displayed_sound_info,
-            displayed_sound,
-            displayed_between,
-            displayed_battery_info,
-            displayed_battery,
-            displayed_between,
-            displayed_time_info,
-            displayed_time,
-            displayed_end
-            );
+                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+                displayed_begin,
+                displayed_ip_info,
+                displayed_ip_wifi,
+                displayed_ip_cable,
+                displayed_between,
+                displayed_ram_info,
+                displayed_ram,
+                displayed_between,
+                displayed_sound_info,
+                displayed_sound,
+                displayed_between,
+                displayed_battery_info,
+                displayed_battery,
+                displayed_between,
+                displayed_time_info,
+                displayed_time,
+                displayed_end
+               );
         XStoreName(display, DefaultRootWindow(display), displayed_text);
         XSync(display, False);
-        sleep(update_sleep);
+
+        if( fast_refresh_flag == 1 )
+        {
+            usleep(fast_refresh);
+            continue;
+        } else {
+            sleep(update_sleep);
+        }
     }
 }
 
-int main () {
+int main ()
+{
 
     init();
 
