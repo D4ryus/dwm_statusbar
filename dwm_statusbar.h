@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <netdb.h>
 
+/* config values, change them so that they fit ur system. if u change these to
+ * wrong values the statusbar will not work properly, or not at all */
 const static char* BATTERY_STATUS  = "/sys/class/power_supply/BAT0/status";
 const static char* BATTERY_FULL    = "/sys/class/power_supply/BAT0/energy_full";
 const static char* BATTERY_NOW     = "/sys/class/power_supply/BAT0/energy_now";
@@ -35,6 +37,8 @@ const static char* RAM             = "/proc/meminfo";
 const static char* WIFI_INTERFACE  = "wlp3s0";   // max 10 charscters
 const static char* CABLE_INTERFACE = "enp0s25";  // max 10 characters
 
+/* displayed strings, feel free to change them to whatever you like, changes 
+ * will just affect the displayed information. */
 const static char* displayed_begin        = "[";
 const static char* displayed_between      = "] [";
 const static char* displayed_end          = "]";
@@ -44,8 +48,8 @@ const static char* displayed_ram_info     = "ram: ";
 const static char* displayed_time_info    = "";
 const static char* displayed_sound_info   = "vol: ";
 
-const static int   fast_refresh      = 200000; // microseconds
-
+/* thread sleep config */
+const static int   fast_refresh  = 200000; // microseconds
 const static int   update_sleep  = 1; // seconds
 const static int   ip_sleep      = 1;
 const static int   battery_sleep = 60;
@@ -53,7 +57,7 @@ const static int   ram_sleep     = 5;
 const static int   time_sleep    = 60;
 const static int   sound_sleep   = 1;
 
-/* will be updated during execution */
+/* these values will update during execution */
 static int         fast_refresh_flag = 0;
 static char        displayed_text[512];
 
