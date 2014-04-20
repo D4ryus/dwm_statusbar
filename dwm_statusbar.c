@@ -104,7 +104,7 @@ void *update_ram(void * val)
         ram_available /= 1000;
         ram_used = ram_total - ram_available;
 
-        sprintf(displayed_ram, "%d/%d", ram_used, ram_total);
+        sprintf(displayed_ram, "%d mb", ram_used);
         sleep(ram_sleep);
     }
 }

@@ -65,7 +65,7 @@ static int         fast_refresh_flag = 0;
 static char        displayed_text[512];
 
 static char        displayed_battery[17];
-static char        displayed_ram[12];
+static char        displayed_ram[9];
 static char        displayed_time[17];
 static char        displayed_ip_wifi[30];
 static char        displayed_ip_cable[30];
