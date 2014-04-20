@@ -22,7 +22,6 @@ void *update_time(void * val)
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         strncpy(displayed_time, asctime(timeinfo), 16);
-        printf("time\n");
         sleep(time_sleep);
     }
 }
@@ -30,40 +29,50 @@ void *update_time(void * val)
 void *update_battery(void * val)
 {
     usleep(rand() % 100000);
-    FILE* fd;
-    int energy_full;
-    int  battery_percentage;
+    FILE* fd_now;
+    FILE* fd_full;
+    FILE* fd_status;
     int  energy_now;
+    int  energy_full;
     char energy_status[12];
-    fd = fopen(BATTERY_FULL, "r");
-    if(fd == NULL)
-        error("Error opening energy_full");
-
-    fscanf(fd, "%d", &energy_full);
-    fclose(fd);
+    int  battery_percentage;
     while(1)
     {
-        fd = fopen(BATTERY_NOW, "r");
-        if(fd == NULL)
+        fd_now    = fopen(BATTERY_NOW, "r");
+        if(fd_now == NULL)
         {
-            error("Error opening energy_now");
+            sprintf(displayed_battery, "on AC");
+            sleep(battery_sleep);
+            continue;
+        } else {
+            fscanf(fd_now, "%d", &energy_now);
+            fclose(fd_now);
         }
-        fscanf(fd, "%d", &energy_now);
-        fclose(fd);
 
-        fd = fopen(BATTERY_STATUS, "r");
-        if(fd == NULL)
+        fd_full   = fopen(BATTERY_FULL, "r");
+        if(fd_full == NULL)
         {
-            error("Error opening energy_status");
+            sprintf(displayed_battery, "on AC");
+            sleep(battery_sleep);
+            continue;
+        } else {
+            fscanf(fd_full, "%d", &energy_full);
+            fclose(fd_full);
         }
-        fscanf(fd, "%s", &energy_status);
-        fclose(fd);
+
+        fd_status = fopen(BATTERY_STATUS, "r");
+        if(fd_status == NULL)
+        {
+            sprintf(displayed_battery, "on AC");
+            sleep(battery_sleep);
+            continue;
+        } else {
+            fscanf(fd_status, "%s", &energy_status);
+            fclose(fd_status);
+        }
 
         battery_percentage = (int)((((float)energy_now) / ((float)energy_full) * 100.0) + 0.5);
-
         sprintf(displayed_battery, "%s %d%s", energy_status, battery_percentage, "%");
-
-        printf("battery\n");
         sleep(battery_sleep);
     }
 }
@@ -93,7 +102,6 @@ void *update_ram(void * val)
         ram_available /= 1000;
         ram_used = ram_total - ram_available;
 
-        printf("ram\n");
         sprintf(displayed_ram, "%d/%d", ram_used, ram_total);
         sleep(ram_sleep);
     }
@@ -121,6 +129,8 @@ void *update_ip(void * val)
 
         fd = socket(AF_INET, SOCK_DGRAM, 0);
         ioctl(fd, SIOCGIFADDR, &ifr_wifi);
+        close(fd);
+        fd = socket(AF_INET, SOCK_DGRAM, 0);
         ioctl(fd, SIOCGIFADDR, &ifr_cable);
         close(fd);
 
@@ -178,7 +188,6 @@ void *update_ip(void * val)
             displayed_ip_cable[0] = '\0'; // no cable assigned
 
         }
-    printf("ip\n");
         sleep(ip_sleep);
     }
 }
@@ -226,12 +235,10 @@ void *update_sound(void * val)
 
         volume = 100.0 * vol / vol_max;
 
-        printf("sound volume: %f, %f, %d, %d\n", volume, volume_backup, switch_value, switch_value_backup);
         if((volume != volume_backup) || (switch_value != switch_value_backup))
         {
             count = 10;
             fast_refresh_flag = 1;
-            printf("sound\n");
             sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", volume);
         } else {
             count--;
@@ -280,7 +287,6 @@ void *update_status(void * val)
                 displayed_end
                );
         XStoreName(display, DefaultRootWindow(display), displayed_text);
-        printf("status\n");
         XSync(display, False);
 
         if( fast_refresh_flag == 1 )
@@ -321,6 +327,14 @@ int main ()
 
     if( pthread_create( &status_thread,  NULL, &update_status,  NULL) != 0)
         error("konnte status_thread nicht erzeugen\n");
+
+    /* assigning a name to each thread, not needed but usefull for debugging */
+    pthread_setname_np(time_thread,    "update_time");
+    pthread_setname_np(battery_thread, "update_battery");
+    pthread_setname_np(ram_thread,     "update_ram");
+    pthread_setname_np(ip_thread,      "update_ip");
+    pthread_setname_np(sound_thread,   "update_sound");
+    pthread_setname_np(status_thread,  "update_status");
 
     pthread_join( time_thread,    NULL);
     pthread_join( battery_thread, NULL);
