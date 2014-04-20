@@ -1,0 +1,10 @@
+- move most of the stuff to /proc
+- implement /proc/loadavg
+- implement /proc/cpu-something
+- implement /proc/net/dev -> up/down speed
+- implement /proc/net/arp -> show current gateway ip
+- implement /proc/net/tcp -> show last used ip, change current way, since very buggy
+- implement /proc/devices -> show dev and current up/down
+
+- fix bug with ip not changing (change to /proc/net/tcp)
+- fix bug with suspend -> exit
