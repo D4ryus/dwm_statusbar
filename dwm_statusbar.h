@@ -33,6 +33,7 @@
 const static char* BATTERY_STATUS  = "/sys/class/power_supply/BAT0/status";
 const static char* BATTERY_FULL    = "/sys/class/power_supply/BAT0/energy_full";
 const static char* BATTERY_NOW     = "/sys/class/power_supply/BAT0/energy_now";
+const static char* LOADAVG         = "/proc/loadavg";
 const static char* RAM             = "/proc/meminfo";
 const static char* WIFI_INTERFACE  = "wlp3s0";   // max 10 charscters
 const static char* CABLE_INTERFACE = "enp0s25";  // max 10 characters
@@ -47,6 +48,7 @@ const static char* displayed_battery_info = "bat: ";
 const static char* displayed_ram_info     = "ram: ";
 const static char* displayed_time_info    = "";
 const static char* displayed_sound_info   = "vol: ";
+const static char* displayed_loadavg_info = "avg: ";
 
 /* thread sleep config */
 const static int   fast_refresh  = 200000; // microseconds
@@ -56,6 +58,7 @@ const static int   battery_sleep = 60;
 const static int   ram_sleep     = 5;
 const static int   time_sleep    = 60;
 const static int   sound_sleep   = 1;
+const static int   loadavg_sleep = 10;
 
 /* these values will update during execution */
 static int         fast_refresh_flag = 0;
@@ -67,6 +70,7 @@ static char        displayed_time[17];
 static char        displayed_ip_wifi[30];
 static char        displayed_ip_cable[30];
 static char        displayed_sound[9];
+static char        displayed_loadavg[12];
 
 void error(char*);
 void *update_time(void*);
@@ -74,4 +78,5 @@ void *update_battery(void*);
 void *update_ram(void*);
 void *update_ip(void*);
 void *update_sound(void*);
+void *update_loadavg(void*);
 void *update_status(void*);

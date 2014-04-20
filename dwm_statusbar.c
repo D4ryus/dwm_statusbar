@@ -280,6 +280,32 @@ void *update_sound(void * val)
     }
 }
 
+void *update_loadavg(void * val)
+{
+    usleep(rand() % 100000);
+    float  loadavg_1min;
+    float  loadavg_5min;
+    float  loadavg_10min;
+    FILE *fd;
+    while(1)
+    {
+        fd = fopen(LOADAVG, "r");
+        if(fd == NULL)
+        {
+            sprintf(displayed_loadavg, " coudln't read file :( ");
+            sleep(loadavg_sleep);
+            continue;
+        }
+        fscanf(fd, "%f %f %f", &loadavg_1min, &loadavg_5min,  &loadavg_10min);
+        fclose(fd);
+
+        sprintf(displayed_loadavg, "%.2f %.2f %.2f", loadavg_1min,
+                                                     loadavg_5min,
+                                                     loadavg_10min);
+        sleep(loadavg_sleep);
+    }
+}
+
 void *update_status(void * val)
 {
     Display* display;
@@ -289,11 +315,14 @@ void *update_status(void * val)
     while(1)
     {
         sprintf(displayed_text,
-                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                 displayed_begin,
                 displayed_ip_info,
                 displayed_ip_wifi,
                 displayed_ip_cable,
+                displayed_between,
+                displayed_loadavg_info,
+                displayed_loadavg,
                 displayed_between,
                 displayed_ram_info,
                 displayed_ram,
@@ -331,6 +360,7 @@ int main ()
     pthread_t ip_thread;
     pthread_t sound_thread;
     pthread_t status_thread;
+    pthread_t loadavg_thread;
 
     if( pthread_create( &time_thread,    NULL, &update_time,    NULL) != 0)
         error("konnte time_thread nicht erzeugen\n");
@@ -350,6 +380,9 @@ int main ()
     if( pthread_create( &status_thread,  NULL, &update_status,  NULL) != 0)
         error("konnte status_thread nicht erzeugen\n");
 
+    if( pthread_create( &loadavg_thread,  NULL, &update_loadavg,  NULL) != 0)
+        error("konnte loadavg_thread nicht erzeugen\n");
+
     /* assigning a name to each thread, not needed but usefull for debugging */
     pthread_setname_np(time_thread,    "update_time");
     pthread_setname_np(battery_thread, "update_battery");
@@ -357,6 +390,7 @@ int main ()
     pthread_setname_np(ip_thread,      "update_ip");
     pthread_setname_np(sound_thread,   "update_sound");
     pthread_setname_np(status_thread,  "update_status");
+    pthread_setname_np(loadavg_thread, "update_loadavg");
 
     pthread_join( time_thread,    NULL);
     pthread_join( battery_thread, NULL);
@@ -364,6 +398,7 @@ int main ()
     pthread_join( ip_thread,      NULL);
     pthread_join( sound_thread,   NULL);
     pthread_join( status_thread,  NULL);
+    pthread_join( loadavg_thread, NULL);
 
     return 0;
 }
