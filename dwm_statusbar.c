@@ -228,6 +228,7 @@ void *update_netdev(void * val)
     unsigned int received;
     unsigned int send;
     int count;
+    int empty_count;
     char buffer[1024];
     char interface[12];
     while(1)
@@ -242,6 +243,7 @@ void *update_netdev(void * val)
         fgets(buffer, 1024, fp);
         fgets(buffer, 1024, fp);
         count = 0;
+        empty_count = 0;
         while(fgets(buffer, 1024, fp))
         {
             sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u", interface, &received, &send);
@@ -251,8 +253,8 @@ void *update_netdev(void * val)
             down_b4[count] = received;
             if((up == 0) || (down == 0))
             {
-                sprintf(displayed_netdev, "-/-");
                 count++;
+                empty_count++;
                 continue;
             }
             sprintf(displayed_netdev, "%s %u/%u kB%ds",
@@ -263,6 +265,9 @@ void *update_netdev(void * val)
             count++;
         }
         fclose(fp);
+        if(empty_count == count)
+            sprintf(displayed_netdev, "-/-");
+
         sleep(netdev_sleep);
     }
 }
