@@ -1,9 +1,9 @@
 /* dwm_statusbar
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
- * also thanks to Yu-Jie Lin, most of the alsa code is from him.
  * vim:ts=4:sw=4:ai:
  */
+
 #include "dwm_statusbar.h"
 
 void error(char *msg)
@@ -105,92 +105,8 @@ void *update_ram(void * val)
         ram_used = ram_total - ram_available;
 
         sprintf(displayed_ram, "%d mb", ram_used);
+
         sleep(ram_sleep);
-    }
-}
-
-void *update_ip(void * val)
-{
-    usleep(rand() % 100000);
-    char         wifi_ip[17];
-    char         cable_ip[17];
-    int wifi_connected  = 0; // just boolean flag
-    int cable_connected = 0; // just boolean flag
-    int          fd;
-    struct ifreq ifr_wifi;
-    struct ifreq ifr_cable;
-    while(1)
-    {
-        //Type of address to retrieve - IPv4 IP address
-        ifr_wifi.ifr_addr.sa_family  = AF_INET;
-        ifr_cable.ifr_addr.sa_family = AF_INET;
-
-        //Copy the interface name in the ifreq structure
-        strncpy(ifr_wifi.ifr_name,  WIFI_INTERFACE,  IFNAMSIZ-1);
-        strncpy(ifr_cable.ifr_name, CABLE_INTERFACE, IFNAMSIZ-1);
-
-        fd = socket(AF_INET, SOCK_DGRAM, 0);
-        ioctl(fd, SIOCGIFADDR, &ifr_wifi);
-        close(fd);
-        fd = socket(AF_INET, SOCK_DGRAM, 0);
-        ioctl(fd, SIOCGIFADDR, &ifr_cable);
-        close(fd);
-
-        // copy ip to global string
-        strncpy(wifi_ip,  inet_ntoa(( (struct sockaddr_in *)&ifr_wifi.ifr_addr  )->sin_addr), 16);
-        strncpy(cable_ip, inet_ntoa(( (struct sockaddr_in *)&ifr_cable.ifr_addr )->sin_addr), 16);
-
-        int w1, w2, w3, w4;
-        int c1, c2, c3, c4;
-        sscanf(wifi_ip,  "%d.%d.%d.%d", &w1, &w2, &w3, &w4);
-        sscanf(cable_ip, "%d.%d.%d.%d", &c1, &c2, &c3, &c4);
-
-        /* I have an strange bug where when there is no ip assigned to my wifi
-         * interface i get ip 118.97.105.108, thats why this section is here.
-         * will take a look into it when i have time.
-         */
-        if( ( w1 == 0   && w2 == 0  && w3 == 0   && w4 == 0   ) ||
-                ( w1 == 118 && w2 == 97 && w3 == 105 && w4 == 108 ) )
-        {
-            wifi_connected = 0;
-        } else {
-            wifi_connected = 1;
-        }
-
-        if( c1 == 0 && c2 == 0 && c3 == 0 && c4 == 0 )
-        {
-            cable_connected = 0;
-        } else {
-            cable_connected = 1;
-        }
-
-
-        if        ( wifi_connected &&  cable_connected )
-        {
-
-            sprintf(displayed_ip_wifi, "%s: %s", WIFI_INTERFACE, wifi_ip);
-            sprintf(displayed_ip_cable, " %s: %s", CABLE_INTERFACE, cable_ip);
-
-        } else if ( wifi_connected && !cable_connected )
-        {
-
-            sprintf(displayed_ip_wifi, "%s: %s", WIFI_INTERFACE, wifi_ip);
-            displayed_ip_cable[0] = '\0'; // no cable assigned
-
-        } else if (!wifi_connected &&  cable_connected )
-        {
-
-            displayed_ip_wifi[0] = '\0'; // no wifi assigned
-            sprintf(displayed_ip_cable, "%s: %s", CABLE_INTERFACE, cable_ip);
-
-        } else if (!wifi_connected && !cable_connected )
-        {
-
-            strncpy(displayed_ip_wifi, "not connected", 13);
-            displayed_ip_cable[0] = '\0'; // no cable assigned
-
-        }
-        sleep(ip_sleep);
     }
 }
 
@@ -274,6 +190,7 @@ void *update_sound(void * val)
             usleep(fast_refresh);
             continue;
         } else {
+            sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", volume);
             fast_refresh_flag = 0;
             sleep(sound_sleep);
         }
@@ -306,6 +223,57 @@ void *update_loadavg(void * val)
     }
 }
 
+void *update_netdev(void * val)
+{
+    usleep(rand() % 100000);
+    FILE* fp;
+
+    unsigned int up_b4[3] = { 0, 0, 0 };
+    unsigned int down_b4[3] = { 0, 0, 0 };
+    unsigned int up = 0;
+    unsigned int down = 0;
+    unsigned int received;
+    unsigned int send;
+    int count;
+    char buffer[1024];
+    char interface[12];
+    while(1)
+    {
+        fp = fopen(NETDEV, "r");
+        if(fp == NULL)
+        {
+            sprintf(displayed_netdev, "netdev_error");
+            sleep(netdev_sleep);
+            continue;
+        }
+        fgets(buffer, 1024, fp);
+        fgets(buffer, 1024, fp);
+        count = 0;
+        while(fgets(buffer, 1024, fp))
+        {
+            sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u", interface, &received, &send);
+            up = send - up_b4[count];
+            down = received - down_b4[count];
+            up_b4[count] = send;
+            down_b4[count] = received;
+            if((up == 0) || (down == 0))
+            {
+                sprintf(displayed_netdev, "-/-",
+                count++;
+                continue;
+            }
+            sprintf(displayed_netdev, "%s %u/%u kB%ds",
+                                                interface,
+                                                up/1000,
+                                                down/1000,
+                                                netdev_sleep);
+            count++;
+        }
+        fclose(fp);
+        sleep(netdev_sleep);
+    }
+}
+
 void *update_status(void * val)
 {
     Display* display;
@@ -315,11 +283,10 @@ void *update_status(void * val)
     while(1)
     {
         sprintf(displayed_text,
-                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                 displayed_begin,
-                displayed_ip_info,
-                displayed_ip_wifi,
-                displayed_ip_cable,
+                displayed_netdev_info,
+                displayed_netdev,
                 displayed_between,
                 displayed_loadavg_info,
                 displayed_loadavg,
@@ -353,52 +320,51 @@ void *update_status(void * val)
 
 int main ()
 {
-
     pthread_t time_thread;
     pthread_t battery_thread;
     pthread_t ram_thread;
-    pthread_t ip_thread;
     pthread_t sound_thread;
     pthread_t status_thread;
     pthread_t loadavg_thread;
+    pthread_t netdev_thread;
 
-    if( pthread_create( &time_thread,    NULL, &update_time,    NULL) != 0)
-        error("konnte time_thread nicht erzeugen\n");
+    if( pthread_create( &time_thread,    NULL, &update_time,     NULL) != 0)
+        error("couldn't create time_thread\n");
 
-    if( pthread_create( &battery_thread, NULL, &update_battery, NULL) != 0)
-        error("konnte batter_thread nicht erzeugen\n");
+    if( pthread_create( &battery_thread, NULL, &update_battery,  NULL) != 0)
+        error("couldn't create batter_thread\n");
 
-    if( pthread_create( &ram_thread,     NULL, &update_ram,     NULL) != 0)
-        error("konnte ram_threadnicht erzeugen\n");
+    if( pthread_create( &ram_thread,     NULL, &update_ram,      NULL) != 0)
+        error("couldn't create ram_threadnichtn");
 
-    if( pthread_create( &ip_thread,      NULL, &update_ip,      NULL) != 0)
-        error("konnte ip_thread nicht erzeugen\n");
+    if( pthread_create( &sound_thread,   NULL, &update_sound,    NULL) != 0)
+        error("couldn't create sound_thread\n");
 
-    if( pthread_create( &sound_thread,   NULL, &update_sound,   NULL) != 0)
-        error("konnte sound_thread nicht erzeugen\n");
+    if( pthread_create( &status_thread,  NULL, &update_status,   NULL) != 0)
+        error("couldn't create status_thread\n");
 
-    if( pthread_create( &status_thread,  NULL, &update_status,  NULL) != 0)
-        error("konnte status_thread nicht erzeugen\n");
+    if( pthread_create( &loadavg_thread, NULL, &update_loadavg,  NULL) != 0)
+        error("couldn't create loadavg_thread\n");
 
-    if( pthread_create( &loadavg_thread,  NULL, &update_loadavg,  NULL) != 0)
-        error("konnte loadavg_thread nicht erzeugen\n");
+    if( pthread_create( &netdev_thread,  NULL, &update_netdev,   NULL) != 0)
+        error("couldn't create netdev_thread\n");
 
     /* assigning a name to each thread, not needed but usefull for debugging */
     pthread_setname_np(time_thread,    "update_time");
     pthread_setname_np(battery_thread, "update_battery");
     pthread_setname_np(ram_thread,     "update_ram");
-    pthread_setname_np(ip_thread,      "update_ip");
     pthread_setname_np(sound_thread,   "update_sound");
     pthread_setname_np(status_thread,  "update_status");
     pthread_setname_np(loadavg_thread, "update_loadavg");
+    pthread_setname_np(netdev_thread,  "update_netdev");
 
-    pthread_join( time_thread,    NULL);
-    pthread_join( battery_thread, NULL);
-    pthread_join( ram_thread,     NULL);
-    pthread_join( ip_thread,      NULL);
-    pthread_join( sound_thread,   NULL);
-    pthread_join( status_thread,  NULL);
-    pthread_join( loadavg_thread, NULL);
+    pthread_join(time_thread,    NULL);
+    pthread_join(battery_thread, NULL);
+    pthread_join(ram_thread,     NULL);
+    pthread_join(sound_thread,   NULL);
+    pthread_join(status_thread,  NULL);
+    pthread_join(loadavg_thread, NULL);
+    pthread_join(netdev_thread,  NULL);
 
     return 0;
 }
