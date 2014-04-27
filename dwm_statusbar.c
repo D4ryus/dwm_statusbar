@@ -80,31 +80,30 @@ void *update_battery(void * val)
 void *update_ram(void * val)
 {
     usleep(rand() % 100000);
-    int  ram_total;
-    int  ram_available;
-    int  ram_free;
-    int  ram_used;
-    char buffer[64];
-    FILE *fd;
+    int  ram[5];
+    char buffer[1024];
+    FILE *fp;
     while(1)
     {
-        fd = fopen(RAM, "r");
-        if(fd == NULL)
+        fp = fopen(RAM, "r");
+        if(fp == NULL)
         {
-            sprintf(displayed_ram, " coudln't read file :( ");
+            sprintf(displayed_ram, "ram error");
             sleep(ram_sleep);
             continue;
         }
-        fscanf(fd, "%s %d %s", &buffer, &ram_total,  &buffer);
-        fscanf(fd, "%s %d %s", &buffer, &ram_free, &buffer);
-        fscanf(fd, "%s %d",    &buffer, &ram_available);
-        fclose(fd);
 
-        ram_total /= 1000;
-        ram_available /= 1000;
-        ram_used = ram_total - ram_available;
+        int i = 0;
+        for(;fgets(buffer, 1024, fp);i++)
+        {
+            if(i==5) break;
+            sscanf(buffer, "%*s %d %*s", &ram[i]);
+        }
+        fclose(fp);
 
-        sprintf(displayed_ram, "%d mb", ram_used);
+        ram[2] = ram[0] - (ram[1] + ram[3] + ram[4]); /* ram used */
+
+        sprintf(displayed_ram, "%d mb", ram[2] / 1024);
 
         sleep(ram_sleep);
     }
@@ -177,7 +176,8 @@ void *update_sound(void * val)
         {
             count = 10;
             fast_refresh_flag = 1;
-            sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", volume);
+            sprintf(displayed_sound, "%s%3.0f%%",
+                                   (switch_value == 1) ? "on" : "off", volume);
         } else {
             count--;
         }
@@ -209,9 +209,7 @@ void *update_loadavg(void * val)
             sleep(loadavg_sleep);
             continue;
         }
-        sprintf(displayed_loadavg, "%.2f %.2f %.2f", avg[0],
-                                                     avg[1],
-                                                     avg[2]);
+        sprintf(displayed_loadavg, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
         sleep(loadavg_sleep);
     }
 }
@@ -221,8 +219,8 @@ void *update_netdev(void * val)
     usleep(rand() % 100000);
     FILE* fp;
 
-    unsigned int up_b4[3] = { 0, 0, 0 };
-    unsigned int down_b4[3] = { 0, 0, 0 };
+    unsigned int up_b4[3];
+    unsigned int down_b4[3];
     unsigned int up = 0;
     unsigned int down = 0;
     unsigned int received;
@@ -237,7 +235,7 @@ void *update_netdev(void * val)
         if(fp == NULL)
         {
             sprintf(displayed_netdev, "netdev_error");
-            sleep(netdev_sleep);
+            sleep(1);
             continue;
         }
         fgets(buffer, 1024, fp);
@@ -246,7 +244,8 @@ void *update_netdev(void * val)
         empty_count = 0;
         while(fgets(buffer, 1024, fp))
         {
-            sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u", interface, &received, &send);
+            sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u",
+                                                  interface, &received, &send);
             up = send - up_b4[count];
             down = received - down_b4[count];
             up_b4[count] = send;
@@ -257,18 +256,69 @@ void *update_netdev(void * val)
                 empty_count++;
                 continue;
             }
-            sprintf(displayed_netdev, "%s %u/%u kB%ds",
-                                                interface,
-                                                up/1000,
-                                                down/1000,
-                                                netdev_sleep);
+            sprintf(displayed_netdev, "%s %u/%u kBs",
+                                  interface, up/1000, down/1000);
             count++;
         }
         fclose(fp);
         if(empty_count == count)
-            sprintf(displayed_netdev, "-/-");
+            sprintf(displayed_netdev, "-/- kBs");
 
-        sleep(netdev_sleep);
+        sleep(1);
+    }
+}
+
+void *update_stat(void * val)
+{
+    usleep(rand() % 100000);
+
+    FILE*        fp;
+    char         buffer[1024];
+    /* saves up user/nice/system/idle/total/usage/usageb4/totalb4
+     * for each cpu */
+    unsigned int cpu[CPU_CORES +1][8];
+    double       load[CPU_CORES +1];
+
+    while(1)
+    {
+        fp = fopen(STAT, "r");
+        if(fp == NULL)
+        {
+            sprintf(displayed_stat, "stat_error");
+            sleep(stat_sleep);
+            continue;
+        }
+
+        /* read from file into cpu array */
+        int i;
+        for(i = 0; i < CPU_CORES + 1; i++)
+        {
+            fgets(buffer, 1024, fp);
+            sscanf(buffer, "%*s %u %u %u %u",
+                               &cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
+        }
+        fclose(fp);
+
+        /* calculate total and used cpu */
+        for(i = 0; i < CPU_CORES + 1; i++)
+        {
+            cpu[i][4] = cpu[i][0] + cpu[i][1] + cpu[i][2] + cpu[i][3];
+            cpu[i][5] = cpu[i][4] - cpu[i][3];
+        }
+
+        /* calculate percentage usage */
+        for(i = 0; i < CPU_CORES + 1; i++)
+        {
+            load[i] = ((double)( cpu[i][5] - cpu[i][6] )+0.5) /
+                      ((double)( cpu[i][4] - cpu[i][7] )+0.5) * 100;
+            cpu[i][6] = cpu[i][5];
+            cpu[i][7] = cpu[i][4];
+        }
+
+        sprintf(displayed_stat, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
+                   load[0], load[1], load[2], load[3], load[4]);
+
+        sleep(stat_sleep);
     }
 }
 
@@ -281,25 +331,15 @@ void *update_status(void * val)
     while(1)
     {
         sprintf(displayed_text,
-                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                 displayed_begin,
-                displayed_netdev_info,
-                displayed_netdev,
-                displayed_between,
-                displayed_loadavg_info,
-                displayed_loadavg,
-                displayed_between,
-                displayed_ram_info,
-                displayed_ram,
-                displayed_between,
-                displayed_sound_info,
-                displayed_sound,
-                displayed_between,
-                displayed_battery_info,
-                displayed_battery,
-                displayed_between,
-                displayed_time_info,
-                displayed_time,
+                displayed_netdev_info,  displayed_netdev,  displayed_between,
+                displayed_stat_info,    displayed_stat,    displayed_between,
+                displayed_loadavg_info, displayed_loadavg, displayed_between,
+                displayed_ram_info,     displayed_ram,     displayed_between,
+                displayed_sound_info,   displayed_sound,   displayed_between,
+                displayed_battery_info, displayed_battery, displayed_between,
+                displayed_time_info,    displayed_time,
                 displayed_end
                );
         XStoreName(display, DefaultRootWindow(display), displayed_text);
@@ -325,6 +365,7 @@ int main ()
     pthread_t status_thread;
     pthread_t loadavg_thread;
     pthread_t netdev_thread;
+    pthread_t stat_thread;
 
     if( pthread_create( &time_thread,    NULL, &update_time,     NULL) != 0)
         error("couldn't create time_thread\n");
@@ -347,6 +388,9 @@ int main ()
     if( pthread_create( &netdev_thread,  NULL, &update_netdev,   NULL) != 0)
         error("couldn't create netdev_thread\n");
 
+    if( pthread_create( &stat_thread,    NULL, &update_stat,     NULL) != 0)
+        error("couldn't create stat_thread\n");
+
     /* assigning a name to each thread, not needed but usefull for debugging */
     pthread_setname_np(time_thread,    "update_time");
     pthread_setname_np(battery_thread, "update_battery");
@@ -355,6 +399,7 @@ int main ()
     pthread_setname_np(status_thread,  "update_status");
     pthread_setname_np(loadavg_thread, "update_loadavg");
     pthread_setname_np(netdev_thread,  "update_netdev");
+    pthread_setname_np(stat_thread,    "update_stat");
 
     pthread_join(time_thread,    NULL);
     pthread_join(battery_thread, NULL);
@@ -363,6 +408,7 @@ int main ()
     pthread_join(status_thread,  NULL);
     pthread_join(loadavg_thread, NULL);
     pthread_join(netdev_thread,  NULL);
+    pthread_join(stat_thread,    NULL);
 
     return 0;
 }
