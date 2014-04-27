@@ -200,25 +200,18 @@ void *update_sound(void * val)
 void *update_loadavg(void * val)
 {
     usleep(rand() % 100000);
-    float  loadavg_1min;
-    float  loadavg_5min;
-    float  loadavg_10min;
-    FILE *fd;
+    double avg[3];
     while(1)
     {
-        fd = fopen(LOADAVG, "r");
-        if(fd == NULL)
+        if(getloadavg(avg, 3) < 0)
         {
-            sprintf(displayed_loadavg, " coudln't read file :( ");
+            sprintf(displayed_loadavg, "avg's error");
             sleep(loadavg_sleep);
             continue;
         }
-        fscanf(fd, "%f %f %f", &loadavg_1min, &loadavg_5min,  &loadavg_10min);
-        fclose(fd);
-
-        sprintf(displayed_loadavg, "%.2f %.2f %.2f", loadavg_1min,
-                                                     loadavg_5min,
-                                                     loadavg_10min);
+        sprintf(displayed_loadavg, "%.2f %.2f %.2f", avg[0],
+                                                     avg[1],
+                                                     avg[2]);
         sleep(loadavg_sleep);
     }
 }
@@ -258,7 +251,7 @@ void *update_netdev(void * val)
             down_b4[count] = received;
             if((up == 0) || (down == 0))
             {
-                sprintf(displayed_netdev, "-/-",
+                sprintf(displayed_netdev, "-/-");
                 count++;
                 continue;
             }

@@ -24,7 +24,6 @@
 const static char* BATTERY_STATUS  = "/sys/class/power_supply/BAT0/status";
 const static char* BATTERY_FULL    = "/sys/class/power_supply/BAT0/energy_full";
 const static char* BATTERY_NOW     = "/sys/class/power_supply/BAT0/energy_now";
-const static char* LOADAVG         = "/proc/loadavg";
 const static char* RAM             = "/proc/meminfo";
 const static char* NETDEV          = "/proc/net/dev";
 
