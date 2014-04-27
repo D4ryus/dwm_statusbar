@@ -26,6 +26,8 @@ const static char* BATTERY_FULL    = "/sys/class/power_supply/BAT0/energy_full";
 const static char* BATTERY_NOW     = "/sys/class/power_supply/BAT0/energy_now";
 const static char* RAM             = "/proc/meminfo";
 const static char* NETDEV          = "/proc/net/dev";
+const static char* STAT            = "/proc/stat";
+const static int   CPU_CORES       = 4;
 
 /* displayed strings, feel free to change them to whatever you like, changes 
  * will just affect the displayed information. */
@@ -38,6 +40,7 @@ const static char* displayed_time_info    = "";
 const static char* displayed_sound_info   = "vol: ";
 const static char* displayed_loadavg_info = "";
 const static char* displayed_netdev_info  = "";
+const static char* displayed_stat_info    = "";
 
 /* thread sleep config */
 const static int fast_refresh  = 200000; // microseconds
@@ -47,7 +50,7 @@ const static int ram_sleep     = 5;
 const static int time_sleep    = 60;
 const static int sound_sleep   = 1;
 const static int loadavg_sleep = 10;
-const static int netdev_sleep  = 1;
+const static int stat_sleep    = 1;
 
 /* these values will update during execution */
 static int  fast_refresh_flag = 0;
@@ -59,6 +62,7 @@ static char displayed_time[17];
 static char displayed_sound[9];
 static char displayed_loadavg[12];
 static char displayed_netdev[20];
+static char displayed_stat[30];
 
 void error(char*);
 void *update_time(void*);
@@ -67,4 +71,5 @@ void *update_ram(void*);
 void *update_sound(void*);
 void *update_loadavg(void*);
 void *update_netdev(void*);
+void *update_stat(void*);
 void *update_status(void*);
