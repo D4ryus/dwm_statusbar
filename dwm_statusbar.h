@@ -1,7 +1,6 @@
 /* dwm_statusbar
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
- * also thanks to Yu-Jie Lin, most of the alsa code is from him.
  * vim:ts=4:sw=4:ai:
  */
 
