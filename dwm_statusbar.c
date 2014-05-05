@@ -274,8 +274,7 @@ void *update_stat(void * val)
 
     FILE*        fp;
     char         buffer[1024];
-    /* saves up user/nice/system/idle/total/usage/usageb4/totalb4
-     * for each cpu */
+    /* saves up user/nice/system/idle/total/usage/usageb4/totalb4 */
     unsigned int cpu[CPU_CORES +1][8];
     double       load[CPU_CORES +1];
 
