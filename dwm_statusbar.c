@@ -127,28 +127,28 @@ void *update_sound(void * val)
     {
         if (snd_mixer_open(&h_mixer, 1) < 0)
         {
-            sprintf(displayed_sound, "error on snd_mixer_open");
+            sprintf(displayed_sound, "error");
             sleep(sound_sleep);
             continue;
         }
 
         if (snd_mixer_attach(h_mixer, "default") < 0)
         {
-            sprintf(displayed_sound, "error on snd_mixer_attach");
+            sprintf(displayed_sound, "error");
             sleep(sound_sleep);
             continue;
         }
 
         if (snd_mixer_selem_register(h_mixer, NULL, NULL) < 0)
         {
-            sprintf(displayed_sound, "error on snd_mixer_selem_register");
+            sprintf(displayed_sound, "error");
             sleep(sound_sleep);
             continue;
         }
 
         if (snd_mixer_load(h_mixer) < 0)
         {
-            sprintf(displayed_sound, "error on snd_mixer_load");
+            sprintf(displayed_sound, "error");
             sleep(sound_sleep);
             continue;
         }
@@ -159,7 +159,7 @@ void *update_sound(void * val)
 
         if ((elem = snd_mixer_find_selem(h_mixer, sid)) == NULL)
         {
-            sprintf(displayed_sound, "error on snd_mixer_find_selem");
+            sprintf(displayed_sound, "error");
             sleep(sound_sleep);
             continue;
         }
