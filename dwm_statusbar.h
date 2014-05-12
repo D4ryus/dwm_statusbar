@@ -1,7 +1,7 @@
 /* dwm_statusbar
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
- * vim:ts=4:sw=4:ai:
+ * vim:ts=4:sw=4:ai:foldmethod=syntax:
  */
 
 /* std inputs */
@@ -62,13 +62,3 @@ static char displayed_sound[9];
 static char displayed_loadavg[12];
 static char displayed_netdev[20];
 static char displayed_stat[30];
-
-void error(char*);
-void *update_time(void*);
-void *update_battery(void*);
-void *update_ram(void*);
-void *update_sound(void*);
-void *update_loadavg(void*);
-void *update_netdev(void*);
-void *update_stat(void*);
-void *update_status(void*);

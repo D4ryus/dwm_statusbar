@@ -6,6 +6,17 @@
 
 #include "dwm_statusbar.h"
 
+void error(char*);
+void *update_time(void*);
+void *update_battery(void*);
+void *update_ram(void*);
+void *update_sound(void*);
+void *update_loadavg(void*);
+void *update_netdev(void*);
+void *update_stat(void*);
+void *update_status(void*);
+int pthread_setname_np(pthread_t, char*);
+
 void error(char *msg)
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
@@ -67,7 +78,7 @@ void *update_battery(void * val)
             sleep(battery_sleep);
             continue;
         } else {
-            fscanf(fd_status, "%s", &energy_status);
+            fscanf(fd_status, "%s", energy_status);
             fclose(fd_status);
         }
 
@@ -111,7 +122,6 @@ void *update_ram(void * val)
 
 void *update_sound(void * val)
 {
-    int  err;
     int  switch_value;
     int  switch_value_backup = -1;
     int  count = 0;
