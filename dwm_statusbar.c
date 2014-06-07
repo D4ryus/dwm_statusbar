@@ -553,10 +553,14 @@ main ()
     for (i = 0; i < sizeof(big_box)/sizeof(info); i++)
     {
         pthread_t thread;
-        if( pthread_create(&thread, NULL, &handle_client, (void *)msg_received) != 0)
+        if( pthread_create(&thread, NULL, big_box[i]->fun, big_box[i]) != 0)
             error("couldn't create thread\n");
         pthread_setname_np(thread, big_box[i].name);
     }
+    pthread_t t;
+    if( pthread_create(&thread, NULL, &update_status, big_box != 0)
+        error("couldn't create thread\n");
+    pthread_setname_np(thread, "status");
 
     return 0;
 }
