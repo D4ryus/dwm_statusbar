@@ -447,7 +447,7 @@ void
     }
 }
 
-    void
+void
 *update_stat(info* st)
 {
     usleep(rand() % 100000);
@@ -520,7 +520,7 @@ void
     }
 }
 
-    void
+void
 *update_status(info* st)
 {
     Display* display;
