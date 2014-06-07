@@ -39,7 +39,7 @@ _info
     char* text;
     char* after;
     int   sleep;
-    void (*fun) (Info*);
+    void* (*fun) (Info*);
 } Info;
 
 void *update_time(Info*);
@@ -52,8 +52,8 @@ void *update_stat(Info*);
 
 static Info infos[] = {
 //    name        displayed text            sleep function
-    { "stat"    , "["        , NULL , "] " , 1  , update_netdev  },
-    { "cpu"     , "["        , NULL , "] " , 1  , update_stat    },
+    { "netdev"  , "["        , NULL , "] " , 1  , update_netdev  },
+    { "stat"    , "["        , NULL , "] " , 1  , update_stat    },
   //{ "loadavg" , "["        , NULL , "] " , 10 , update_loadavg },
     { "ram"     , "["        , NULL , "] " , 5  , update_ram     },
     { "sound"   , "[audio: " , NULL , "] " , 1  , update_sound   },
