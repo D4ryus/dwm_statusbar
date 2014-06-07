@@ -24,6 +24,6 @@ static Info infos[] = {
 //  { "loadavg" , "["         , NULL         , "] "      , 10    , update_loadavg },
     { "ram"     , "["         , NULL         , "] "      , 5     , update_ram     },
     { "sound"   , "[audio: "  , NULL         , "] "      , 1     , update_sound   },
-    { "battery" , "[bat:  "   , NULL         , "] "      , 60    , update_battery },
+    { "battery" , "[bat: "    , NULL         , "] "      , 60    , update_battery },
     { "time"    , "["         , NULL         , "] "      , 30    , update_time    },
 };
