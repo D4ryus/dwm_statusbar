@@ -1,5 +1,2 @@
-- move most of the stuff to /proc
 - implement /proc/net/arp -> show current gateway ip
-- implement /proc/net/tcp -> show last used ip, change current way, since very buggy
-
-- fix bug with suspend -> exit
+- implement /proc/net/tcp -> show last used ip
