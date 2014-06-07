@@ -25,22 +25,33 @@ error(char *msg)
 }
 
 void
-*update_time(void * val)
+*update_time(info* st)
 {
     usleep(rand() % 100000);
     struct tm*  timeinfo;
-    time_t      rawtime;
+    time_t rawtime;
+    int    size = 16;
+    char*  new_time;
+    char*  old_time;
     while(1)
     {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        strncpy(displayed_time, asctime(timeinfo), 16);
-        sleep(time_sleep);
+        new_time = alloc(sizeof(char) * size);
+        strncpy(new_time, asctime(timeinfo), size);
+        old_time = st->text;
+        st->text = new_time;
+        if(old_time != NULL)
+        {
+            free(old_time);
+            old_time = NULL;
+        }
+        sleep(st->sleep);
     }
 }
 
 void
-*update_battery(void * val)
+*update_battery(info* st)
 {
     usleep(rand() % 100000);
     FILE* fd_now;
@@ -92,7 +103,7 @@ void
 }
 
 void
-*update_ram(void * val)
+*update_ram(info* st)
 {
     usleep(rand() % 100000);
     int  ram[5];
@@ -125,7 +136,7 @@ void
 }
 
 void
-*update_sound(void * val)
+*update_sound(info* st)
 {
     int  switch_value;
     int  switch_value_backup = -1;
@@ -213,7 +224,7 @@ void
 }
 
 void
-*update_loadavg(void * val)
+*update_loadavg(info* st)
 {
     usleep(rand() % 100000);
     double avg[3];
@@ -231,7 +242,7 @@ void
 }
 
 void
-*update_netdev(void * val)
+*update_netdev(info* st)
 {
     usleep(rand() % 100000);
     FILE* fp;
@@ -286,7 +297,7 @@ void
 }
 
 void
-*update_stat(void * val)
+*update_stat(info* st)
 {
     usleep(rand() % 100000);
 
@@ -340,7 +351,7 @@ void
 }
 
 void
-*update_status(void * val)
+*update_status(info* st)
 {
     Display* display;
     if (!(display = XOpenDisplay(NULL)))
