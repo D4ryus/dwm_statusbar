@@ -457,14 +457,25 @@ void
     /* saves up user/nice/system/idle/total/usage/usageb4/totalb4 */
     unsigned int cpu[CPU_CORES +1][8];
     double       load[CPU_CORES +1];
+    char* new_text;
+    char* old_text;
 
     while(1)
     {
         fp = fopen(STAT, "r");
         if(fp == NULL)
         {
-            sprintf(displayed_stat, "stat_error");
-            sleep(stat_sleep);
+            size = 11;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "stat_error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
@@ -494,10 +505,18 @@ void
             cpu[i][7] = cpu[i][4];
         }
 
-        sprintf(displayed_stat, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
+        size = 17;
+        new_text = malloc(sizeof(char) * size);
+        sprintf(new_text, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
                 load[0], load[1], load[2], load[3], load[4]);
-
-        sleep(stat_sleep);
+        old_text = st->text;
+        st->text = new_text;
+        if(old_text != NULL)
+        {
+            free(old_text);
+            old_text = NULL;
+        }
+        sleep(st->sleep);
     }
 }
 
