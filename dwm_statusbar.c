@@ -37,7 +37,7 @@ void
     {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        new_text = alloc(sizeof(char) * size);
+        new_text = malloc(sizeof(char) * size);
         strncpy(new_text, asctime(timeinfo), size);
         old_text = st->text;
         st->text = new_text;
@@ -70,7 +70,7 @@ void
         if(fd_now   == NULL)
         {
             size = 6;
-            new_text = alloc(sizeof(char)*size);
+            new_text = malloc(sizeof(char)*size);
             strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
@@ -92,7 +92,7 @@ void
         if(fd_full   == NULL)
         {
             size = 6;
-            new_text = alloc(sizeof(char)*size);
+            new_text = malloc(sizeof(char)*size);
             strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
@@ -114,7 +114,7 @@ void
         if(fd_status == NULL)
         {
             size = 6;
-            new_text = alloc(sizeof(char)*size);
+            new_text = malloc(sizeof(char)*size);
             strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
@@ -153,29 +153,48 @@ void
     int  ram[5];
     char buffer[1024];
     FILE *fp;
+    int size;
     while(1)
     {
         fp = fopen(RAM, "r");
         if(fp == NULL)
         {
-            sprintf(displayed_ram, "ram error");
-            sleep(ram_sleep);
+            size = 11;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "ram error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
-        int i = 0;
-        for(;fgets(buffer, 1024, fp);i++)
+        int i;
+        for(i = 0; fgets(buffer, 1024, fp); i++)
         {
-            if(i==5) break;
+            if( i == 5 )
+                break;
             sscanf(buffer, "%*s %d %*s", &ram[i]);
         }
         fclose(fp);
 
-        ram[2] = ram[0] - (ram[1] + ram[3] + ram[4]); /* ram used */
+        ram[2] = ram[0] - (ram[1] + ram[3] + ram[4]); // ram used
 
-        sprintf(displayed_ram, "%d mb", ram[2] / 1024);
-
-        sleep(ram_sleep);
+        size = 8;
+        new_text = malloc(sizeof(char) * size);
+        sprintf(new_text, "%d mb", ram[2] / 1024);
+        old_text = st->text;
+        st->text = new_text;
+        if(old_text != NULL)
+        {
+            free(old_text);
+            old_text = NULL;
+        }
+        sleep(st->sleep);
     }
 }
 
