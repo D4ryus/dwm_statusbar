@@ -154,6 +154,9 @@ void
     char buffer[1024];
     FILE *fp;
     int size;
+    char* new_text;
+    char* old_text;
+    int size;
     while(1)
     {
         fp = fopen(RAM, "r");
