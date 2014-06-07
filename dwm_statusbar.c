@@ -1,7 +1,7 @@
 /* dwm_statusbar
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
- * vim:ts=4:sw=4:ai:
+ * vim:ts=4:sw=4:aifoldmethod=syntax:
  */
 
 #include "dwm_statusbar.h"
@@ -17,13 +17,15 @@ void *update_stat(void*);
 void *update_status(void*);
 int pthread_setname_np(pthread_t, char*);
 
-void error(char *msg)
+void
+error(char *msg)
 {
     fprintf(stderr, "%s: %s\n", msg, strerror(errno));
     exit(1);
 }
 
-void *update_time(void * val)
+void
+*update_time(void * val)
 {
     usleep(rand() % 100000);
     struct tm*  timeinfo;
@@ -37,7 +39,8 @@ void *update_time(void * val)
     }
 }
 
-void *update_battery(void * val)
+void
+*update_battery(void * val)
 {
     usleep(rand() % 100000);
     FILE* fd_now;
@@ -88,7 +91,8 @@ void *update_battery(void * val)
     }
 }
 
-void *update_ram(void * val)
+void
+*update_ram(void * val)
 {
     usleep(rand() % 100000);
     int  ram[5];
@@ -120,7 +124,8 @@ void *update_ram(void * val)
     }
 }
 
-void *update_sound(void * val)
+void
+*update_sound(void * val)
 {
     int  switch_value;
     int  switch_value_backup = -1;
@@ -207,7 +212,8 @@ void *update_sound(void * val)
     }
 }
 
-void *update_loadavg(void * val)
+void
+*update_loadavg(void * val)
 {
     usleep(rand() % 100000);
     double avg[3];
@@ -224,7 +230,8 @@ void *update_loadavg(void * val)
     }
 }
 
-void *update_netdev(void * val)
+void
+*update_netdev(void * val)
 {
     usleep(rand() % 100000);
     FILE* fp;
@@ -278,7 +285,8 @@ void *update_netdev(void * val)
     }
 }
 
-void *update_stat(void * val)
+void
+*update_stat(void * val)
 {
     usleep(rand() % 100000);
 
@@ -331,7 +339,8 @@ void *update_stat(void * val)
     }
 }
 
-void *update_status(void * val)
+void
+*update_status(void * val)
 {
     Display* display;
     if (!(display = XOpenDisplay(NULL)))
@@ -365,7 +374,8 @@ void *update_status(void * val)
     XCloseDisplay(display);
 }
 
-int main ()
+int
+main ()
 {
     pthread_t time_thread;
     pthread_t battery_thread;
