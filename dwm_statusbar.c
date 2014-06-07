@@ -26,6 +26,7 @@ update_time(Info* st)
     int    size = 16;
     char*  new_text;
     char*  old_text;
+    localtime(&rawtime);
     while(1)
     {
         time(&rawtime);
@@ -419,7 +420,6 @@ update_netdev(Info* st)
                 free(old_text);
                 old_text = NULL;
             }
-            sleep(st->sleep);
             count++;
         }
         fclose(fp);
@@ -521,18 +521,24 @@ update_status()
     if (!(display = XOpenDisplay(NULL)))
         error("Cannot open display");
 
+    XStoreName(display, DefaultRootWindow(display), "init statusbar...");
+    XSync(display, False);
+
+    sleep(2);
+
     char displayed_text[256];
     int i;
     while(1)
     {
-        strncpy( displayed_text, infos[0].before, strlen(infos[0].before) );
-        strncat( displayed_text, infos[0].text,   strlen(infos[0].text  ) );
-        strncat( displayed_text, infos[0].after,  strlen(infos[0].after ) );
-        for (i = 1; i < sizeof(infos)/sizeof(Info); i++)
+        strcpy(displayed_text, "");
+        for (i = 0; i < sizeof(infos)/sizeof(Info); i++)
         {
-            strncat( displayed_text, infos[i].before, strlen(infos[i].before) );
-            strncat( displayed_text, infos[i].text,   strlen(infos[i].text  ) );
-            strncat( displayed_text, infos[i].after,  strlen(infos[i].after ) );
+            if(infos[i].text != NULL)
+            {
+                strncat( displayed_text, infos[i].before, strlen(infos[i].before) );
+                strncat( displayed_text, infos[i].text,   strlen(infos[i].text  ) );
+                strncat( displayed_text, infos[i].after,  strlen(infos[i].after ) );
+            }
         }
         XStoreName(display, DefaultRootWindow(display), displayed_text);
         XSync(display, False);
@@ -556,6 +562,8 @@ main ()
     if( pthread_create(&thread, NULL, (void*)update_status, NULL) != 0)
         error("couldn't create thread\n");
     pthread_setname_np(thread, "status");
+
+    pthread_join(thread, NULL);
 
     return 0;
 }

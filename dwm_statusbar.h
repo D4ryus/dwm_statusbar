@@ -53,10 +53,10 @@ void *update_stat(Info*);
 static Info infos[] = {
 //    name        displayed text            sleep function
     { "stat"    , "["        , NULL , "] " , 1  , update_netdev  },
-    { "cpu"     , "["        , NULL , ""   , 1  , update_stat    },
-    { "loadavg" , "["        , NULL , ""   , 10 , update_loadavg },
-    { "ram"     , "["        , NULL , ""   , 5  , update_ram     },
-    { "sound"   , "[ audio:" , NULL , ""   , 1  , update_sound   },
-    { "battery" , "[ bat: "  , NULL , ""   , 60 , update_battery },
-    { "time"    , "["        , NULL , ""   , 30 , update_time    },
+    { "cpu"     , "["        , NULL , "] " , 1  , update_stat    },
+  //{ "loadavg" , "["        , NULL , "] " , 10 , update_loadavg },
+    { "ram"     , "["        , NULL , "] " , 5  , update_ram     },
+    { "sound"   , "[audio: " , NULL , "] " , 1  , update_sound   },
+    { "battery" , "[bat:  "  , NULL , "] " , 60 , update_battery },
+    { "time"    , "["        , NULL , "] " , 30 , update_time    },
 };
