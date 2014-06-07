@@ -28,37 +28,25 @@ const static char* NETDEV          = "/proc/net/dev";
 const static char* STAT            = "/proc/stat";
 const static int   CPU_CORES       = 4;
 
-/* displayed strings, feel free to change them to whatever you like, changes 
- * will just affect the displayed information. */
-const static char* displayed_begin        = "[";
-const static char* displayed_between      = "] [";
-const static char* displayed_end          = "]";
-const static char* displayed_battery_info = "bat: ";
-const static char* displayed_ram_info     = "";
-const static char* displayed_time_info    = "";
-const static char* displayed_sound_info   = "vol: ";
-const static char* displayed_loadavg_info = "";
-const static char* displayed_netdev_info  = "";
-const static char* displayed_stat_info    = "";
+typedef struct
+_info
+{
+    char* name;
+    char* before;
+    char* text;
+    char* end;
+    int   sleep;
+} info;
 
-/* thread sleep config */
-const static int fast_refresh  = 200000; // microseconds
-const static int update_sleep  = 1; // seconds
-const static int battery_sleep = 60;
-const static int ram_sleep     = 5;
-const static int time_sleep    = 60;
-const static int sound_sleep   = 1;
-const static int loadavg_sleep = 10;
-const static int stat_sleep    = 1;
-
-/* these values will update during execution */
-static int  fast_refresh_flag = 0;
-static char displayed_text[512];
-
-static char displayed_battery[17];
-static char displayed_ram[9];
-static char displayed_time[17];
-static char displayed_sound[9];
-static char displayed_loadavg[12];
-static char displayed_netdev[20];
-static char displayed_stat[30];
+typedef struct
+_big_box
+{
+    //               name        displayed text            sleep
+    info stat    = { "stat"    , "["        , NULL , "] " , 1  };
+    info cpu     = { "cpu"     , "["        , NULL , ""   , 1  };
+    info loadavg = { "loadavg" , "["        , NULL , ""   , 10 };
+    info ram     = { "ram"     , "["        , NULL , ""   , 5  };
+    info sound   = { "sound"   , "[ audio:" , NULL , ""   , 1  };
+    info battery = { "battery" , "[ bat: "  , NULL , ""   , 60 };
+    info time    = { "time"    , "["        , NULL , ""   , 30 };
+} big_box;
