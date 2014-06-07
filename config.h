@@ -5,38 +5,25 @@
  * vim:ts=4:sw=4:ai:foldmethod=syntax:
  */
 
-/* std inputs */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-/* input to display error messages */
-#include <errno.h>
-/* Alsa sound includes to get volume */
-#include <alsa/asoundlib.h>
-/* Xlibs to connect to xserver */
-#include <X11/Xlib.h>
-/* input to get current time */
-#include <time.h>
+// config values, change them so that they fit ur system. if u change these to
+// wrong values the statusbar will not work properly, or not at all
+const static char* BATTERY_STATUS = "/sys/class/power_supply/BAT0/status";
+const static char* BATTERY_FULL   = "/sys/class/power_supply/BAT0/energy_full";
+const static char* BATTERY_NOW    = "/sys/class/power_supply/BAT0/energy_now";
+const static char* RAM            = "/proc/meminfo";
+const static char* NETDEV         = "/proc/net/dev";
+const static char* STAT           = "/proc/stat";
+const static int   CPU_CORES      = 4;
+const static int   REFRESH        = 1;
 
-typedef struct _thread_info Info;
-
-struct
-_thread_info
-{
-    char* name;           // name of thread
-    char* before;         // displayed text in front
-    char* text;           // pointer to char array which will be updated by thread
-    char* after;          // displayed text after dynamic text
-    int   sleep;          // sleep time in seconds
-    void* (*fun) (Info*); // pointer to function which will update the text
+// array with all values, just outcommend stuff u do not want to display
+static Info infos[] = {
+//    name      , first char* , dynamic char*, end char* , sleep , function
+    { "netdev"  , "["         , NULL         , "] "      , 1     , update_netdev  },
+    { "stat"    , "["         , NULL         , "] "      , 1     , update_stat    },
+//  { "loadavg" , "["         , NULL         , "] "      , 10    , update_loadavg },
+    { "ram"     , "["         , NULL         , "] "      , 5     , update_ram     },
+    { "sound"   , "[audio: "  , NULL         , "] "      , 1     , update_sound   },
+    { "battery" , "[bat:  "   , NULL         , "] "      , 60    , update_battery },
+    { "time"    , "["         , NULL         , "] "      , 30    , update_time    },
 };
-
-// forward declaration of used functions
-void *update_time(Info*);
-void *update_battery(Info*);
-void *update_ram(Info*);
-void *update_sound(Info*);
-void *update_loadavg(Info*);
-void *update_netdev(Info*);
-void *update_stat(Info*);
