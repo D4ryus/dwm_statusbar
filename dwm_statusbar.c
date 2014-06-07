@@ -377,57 +377,14 @@ void
 int
 main ()
 {
-    pthread_t time_thread;
-    pthread_t battery_thread;
-    pthread_t ram_thread;
-    pthread_t sound_thread;
-    pthread_t status_thread;
-    pthread_t loadavg_thread;
-    pthread_t netdev_thread;
-    pthread_t stat_thread;
-
-    if( pthread_create( &time_thread,    NULL, &update_time,     NULL) != 0)
-        error("couldn't create time_thread\n");
-
-    if( pthread_create( &battery_thread, NULL, &update_battery,  NULL) != 0)
-        error("couldn't create batter_thread\n");
-
-    if( pthread_create( &ram_thread,     NULL, &update_ram,      NULL) != 0)
-        error("couldn't create ram_threadnichtn");
-
-    if( pthread_create( &sound_thread,   NULL, &update_sound,    NULL) != 0)
-        error("couldn't create sound_thread\n");
-
-    if( pthread_create( &status_thread,  NULL, &update_status,   NULL) != 0)
-        error("couldn't create status_thread\n");
-
-    if( pthread_create( &loadavg_thread, NULL, &update_loadavg,  NULL) != 0)
-        error("couldn't create loadavg_thread\n");
-
-    if( pthread_create( &netdev_thread,  NULL, &update_netdev,   NULL) != 0)
-        error("couldn't create netdev_thread\n");
-
-    if( pthread_create( &stat_thread,    NULL, &update_stat,     NULL) != 0)
-        error("couldn't create stat_thread\n");
-
-    /* assigning a name to each thread, not needed but usefull for debugging */
-    pthread_setname_np(time_thread,    "update_time");
-    pthread_setname_np(battery_thread, "update_battery");
-    pthread_setname_np(ram_thread,     "update_ram");
-    pthread_setname_np(sound_thread,   "update_sound");
-    pthread_setname_np(status_thread,  "update_status");
-    pthread_setname_np(loadavg_thread, "update_loadavg");
-    pthread_setname_np(netdev_thread,  "update_netdev");
-    pthread_setname_np(stat_thread,    "update_stat");
-
-    pthread_join(time_thread,    NULL);
-    pthread_join(battery_thread, NULL);
-    pthread_join(ram_thread,     NULL);
-    pthread_join(sound_thread,   NULL);
-    pthread_join(status_thread,  NULL);
-    pthread_join(loadavg_thread, NULL);
-    pthread_join(netdev_thread,  NULL);
-    pthread_join(stat_thread,    NULL);
+    int i;
+    for (i = 0; i < sizeof(big_box)/sizeof(info); i++)
+    {
+        pthread_t thread;
+        if( pthread_create(&thread, NULL, &handle_client, (void *)msg_received) != 0)
+            error("couldn't create thread\n");
+        pthread_setname_np(thread, big_box[i].name);
+    }
 
     return 0;
 }
