@@ -6,6 +6,7 @@
  */
 
 #include "dwm_statusbar.h"
+#include "config.h"
 
 void error(char*);
 void *update_status();
