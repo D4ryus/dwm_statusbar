@@ -327,6 +327,9 @@ void
 {
     usleep(rand() % 100000);
     double avg[3];
+    char* new_text;
+    char* old_text;
+    int size;
     while(1)
     {
         if(getloadavg(avg, 3) < 0)
