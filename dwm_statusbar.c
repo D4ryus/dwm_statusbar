@@ -1,6 +1,7 @@
 /* dwm_statusbar
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
+ * file: dwm_statusbar.c
  * vim:ts=4:sw=4:ai:foldmethod=syntax:
  */
 
