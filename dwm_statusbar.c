@@ -204,14 +204,10 @@ void
 void
 *update_sound(info* st)
 {
-    int  switch_value;
-    int  switch_value_backup = -1;
-    int  count = 0;
     long vol;
     long vol_min;
     long vol_max;
     float volume;
-    float volume_backup = -1.0;
     snd_mixer_t          *h_mixer;
     snd_mixer_selem_id_t *sid;
     snd_mixer_elem_t     *elem;
@@ -335,12 +331,30 @@ void
     {
         if(getloadavg(avg, 3) < 0)
         {
-            sprintf(displayed_loadavg, "avg's error");
-            sleep(loadavg_sleep);
+            size = 12;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "avg's error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
-        sprintf(displayed_loadavg, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
-        sleep(loadavg_sleep);
+        size = 12;
+        new_text = malloc(sizeof(char) * size);
+        sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
+        old_text = st->text;
+        st->text = new_text;
+        if(old_text != NULL)
+        {
+            free(old_text);
+            old_text = NULL;
+        }
+        sleep(st->sleep);
     }
 }
 
