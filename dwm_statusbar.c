@@ -498,13 +498,13 @@ update_time(Info* st)
     int    size = 16;
     char*  new_text;
     char*  old_text;
-    localtime(&rawtime);
     while(1)
     {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        new_text = malloc(sizeof(char) * size);
+        new_text = malloc(sizeof(char) * (size+1));
         strncpy(new_text, asctime(timeinfo), size);
+        new_text[size] = '\0';
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
@@ -528,7 +528,7 @@ update_status()
 
     sleep(2);
 
-    char displayed_text[256];
+    char displayed_text[512];
     int i;
     while(1)
     {
