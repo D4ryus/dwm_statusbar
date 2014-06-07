@@ -215,33 +215,72 @@ void
     snd_mixer_t          *h_mixer;
     snd_mixer_selem_id_t *sid;
     snd_mixer_elem_t     *elem;
+    char* new_text;
+    char* old_text;
+    int   size;
     while(1)
     {
         if (snd_mixer_open(&h_mixer, 1) < 0)
         {
-            sprintf(displayed_sound, "error");
-            sleep(sound_sleep);
+            size = 6;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
         if (snd_mixer_attach(h_mixer, "default") < 0)
         {
-            sprintf(displayed_sound, "error");
-            sleep(sound_sleep);
+            size = 6;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
         if (snd_mixer_selem_register(h_mixer, NULL, NULL) < 0)
         {
-            sprintf(displayed_sound, "error");
-            sleep(sound_sleep);
+            size = 6;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
         if (snd_mixer_load(h_mixer) < 0)
         {
-            sprintf(displayed_sound, "error");
-            sleep(sound_sleep);
+            size = 6;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
@@ -251,8 +290,17 @@ void
 
         if ((elem = snd_mixer_find_selem(h_mixer, sid)) == NULL)
         {
-            sprintf(displayed_sound, "error");
-            sleep(sound_sleep);
+            size = 6;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
 
@@ -264,28 +312,17 @@ void
 
         volume = 100.0 * vol / vol_max;
 
-        if((volume != volume_backup) || (switch_value != switch_value_backup))
+        size = 8;
+        new_text = malloc(sizeof(char) * size);
+        sprintf(new_text, "%s %3.0f%%", (switch_value == 1) ? "on" : "off", volume);
+        old_text = st->text;
+        st->text = new_text;
+        if(old_text != NULL)
         {
-            count = 10;
-            fast_refresh_flag = 1;
-            sprintf(displayed_sound, "%s%3.0f%%",
-                                   (switch_value == 1) ? "on" : "off", volume);
-        } else {
-            count--;
+            free(old_text);
+            old_text = NULL;
         }
-
-        volume_backup = volume;
-        switch_value_backup = switch_value;
-
-        if (count > 0)
-        {
-            usleep(fast_refresh);
-            continue;
-        } else {
-            sprintf(displayed_sound, "%s%3.0f%%", (switch_value == 1) ? "on" : "off", volume);
-            fast_refresh_flag = 0;
-            sleep(sound_sleep);
-        }
+        sleep(st->sleep);
     }
 }
 
