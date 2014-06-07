@@ -377,13 +377,25 @@ void
     int empty_count;
     char buffer[1024];
     char interface[12];
+    char* new_text;
+    char* old_text;
+    int size;
     while(1)
     {
         fp = fopen(NETDEV, "r");
         if(fp == NULL)
         {
-            sprintf(displayed_netdev, "netdev_error");
-            sleep(1);
+            size = 13;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "netdev_error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
         }
         fgets(buffer, 1024, fp);
@@ -393,10 +405,10 @@ void
         while(fgets(buffer, 1024, fp))
         {
             sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u",
-                                                  interface, &received, &send);
-            up = send - up_b4[count];
+                                                 interface, &received, &send);
+            up   = send     - up_b4[count];
             down = received - down_b4[count];
-            up_b4[count] = send;
+            up_b4[count]   = send;
             down_b4[count] = received;
             if((up == 0) || (down == 0))
             {
@@ -404,19 +416,38 @@ void
                 empty_count++;
                 continue;
             }
-            sprintf(displayed_netdev, "%s %u/%u kBs",
-                                  interface, up/1000, down/1000);
+            size = 24;
+            new_text = malloc(sizeof(char) * size);
+            sprintf(new_text, "%s %u/%u kBs", interface, up/1000, down/1000);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             count++;
         }
         fclose(fp);
         if(empty_count == count)
-            sprintf(displayed_netdev, "-/- kBs");
-
-        sleep(1);
+        {
+            size = 7;
+            new_text = malloc(sizeof(char) * size);
+            sprintf(new_text, "-/- kBs");
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+        }
+        sleep(st->sleep);
     }
 }
 
-void
+    void
 *update_stat(info* st)
 {
     usleep(rand() % 100000);
@@ -443,7 +474,7 @@ void
         {
             fgets(buffer, 1024, fp);
             sscanf(buffer, "%*s %u %u %u %u",
-                               &cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
+                    &cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
         }
         fclose(fp);
 
@@ -458,19 +489,19 @@ void
         for(i = 0; i < CPU_CORES + 1; i++)
         {
             load[i] = ((double)( cpu[i][5] - cpu[i][6] )+0.5) /
-                      ((double)( cpu[i][4] - cpu[i][7] )+0.5) * 100;
+                ((double)( cpu[i][4] - cpu[i][7] )+0.5) * 100;
             cpu[i][6] = cpu[i][5];
             cpu[i][7] = cpu[i][4];
         }
 
         sprintf(displayed_stat, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
-                   load[0], load[1], load[2], load[3], load[4]);
+                load[0], load[1], load[2], load[3], load[4]);
 
         sleep(stat_sleep);
     }
 }
 
-void
+    void
 *update_status(info* st)
 {
     Display* display;
@@ -505,7 +536,7 @@ void
     XCloseDisplay(display);
 }
 
-int
+    int
 main ()
 {
     int i;
