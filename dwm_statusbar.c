@@ -31,20 +31,20 @@ void
     struct tm*  timeinfo;
     time_t rawtime;
     int    size = 16;
-    char*  new_time;
-    char*  old_time;
+    char*  new_text;
+    char*  old_text;
     while(1)
     {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        new_time = alloc(sizeof(char) * size);
-        strncpy(new_time, asctime(timeinfo), size);
-        old_time = st->text;
-        st->text = new_time;
-        if(old_time != NULL)
+        new_text = alloc(sizeof(char) * size);
+        strncpy(new_text, asctime(timeinfo), size);
+        old_text = st->text;
+        st->text = new_text;
+        if(old_text != NULL)
         {
-            free(old_time);
-            old_time = NULL;
+            free(old_text);
+            old_text = NULL;
         }
         sleep(st->sleep);
     }
@@ -57,30 +57,55 @@ void
     FILE* fd_now;
     FILE* fd_full;
     FILE* fd_status;
-    int  energy_now;
-    int  energy_full;
-    char energy_status[12];
-    int  battery_percentage;
+    int   energy_now;
+    int   energy_full;
+    char  energy_status[12];
+    int   battery_percentage;
+    int   size;
+    char* old_text;
+    char* new_text;
     while(1)
     {
         fd_now    = fopen(BATTERY_NOW, "r");
-        if(fd_now == NULL)
+        if(fd_now   == NULL)
         {
-            sprintf(displayed_battery, "on AC");
-            sleep(battery_sleep);
+            size = 6;
+            new_text = alloc(sizeof(char)*size);
+            strncpy(new_text, "on AC", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
-        } else {
+        }
+        else
+        {
             fscanf(fd_now, "%d", &energy_now);
             fclose(fd_now);
         }
 
         fd_full   = fopen(BATTERY_FULL, "r");
-        if(fd_full == NULL)
+        if(fd_full   == NULL)
         {
-            sprintf(displayed_battery, "on AC");
-            sleep(battery_sleep);
+            size = 6;
+            new_text = alloc(sizeof(char)*size);
+            strncpy(new_text, "on AC", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
-        } else {
+        }
+        else
+        {
             fscanf(fd_full, "%d", &energy_full);
             fclose(fd_full);
         }
@@ -88,17 +113,36 @@ void
         fd_status = fopen(BATTERY_STATUS, "r");
         if(fd_status == NULL)
         {
-            sprintf(displayed_battery, "on AC");
-            sleep(battery_sleep);
+            size = 6;
+            new_text = alloc(sizeof(char)*size);
+            strncpy(new_text, "on AC", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
             continue;
-        } else {
+        }
+        else
+        {
             fscanf(fd_status, "%s", energy_status);
             fclose(fd_status);
         }
 
         battery_percentage = (int)((((float)energy_now) / ((float)energy_full) * 100.0) + 0.5);
-        sprintf(displayed_battery, "%s %d%s", energy_status, battery_percentage, "%");
-        sleep(battery_sleep);
+        new_text = malloc(sizeof(energy_status) + sizeof(char) * 6);
+        sprintf(new_text, "%s %d%s", energy_status, battery_percentage, "%");
+        old_text = st->text;
+        st->text = new_text;
+        if(old_text != NULL)
+        {
+            free(old_text);
+            old_text = NULL;
+        }
+        sleep(st->sleep);
     }
 }
 
