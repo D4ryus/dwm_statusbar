@@ -542,6 +542,7 @@ update_status()
                 strncat( displayed_text, infos[i].after,  strlen(infos[i].after ) );
             }
         }
+        strncat(displayed_text, "", 1);
         XStoreName(display, DefaultRootWindow(display), displayed_text);
         XSync(display, False);
         sleep(REFRESH);
