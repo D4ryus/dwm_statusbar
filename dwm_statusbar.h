@@ -40,4 +40,3 @@ void *update_sound(Info*);
 void *update_loadavg(Info*);
 void *update_netdev(Info*);
 void *update_stat(Info*);
-
