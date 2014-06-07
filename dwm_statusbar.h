@@ -27,6 +27,9 @@ const static char* RAM             = "/proc/meminfo";
 const static char* NETDEV          = "/proc/net/dev";
 const static char* STAT            = "/proc/stat";
 const static int   CPU_CORES       = 4;
+const static int   REFRESH         = 1;
+
+typedef struct _info Info;
 
 typedef struct
 _info
@@ -34,19 +37,26 @@ _info
     char* name;
     char* before;
     char* text;
-    char* end;
+    char* after;
     int   sleep;
-} info;
+    void (*fun) (Info*);
+} Info;
 
-typedef struct
-_big_box
-{
-    //               name        displayed text            sleep
-    info stat    = { "stat"    , "["        , NULL , "] " , 1  };
-    info cpu     = { "cpu"     , "["        , NULL , ""   , 1  };
-    info loadavg = { "loadavg" , "["        , NULL , ""   , 10 };
-    info ram     = { "ram"     , "["        , NULL , ""   , 5  };
-    info sound   = { "sound"   , "[ audio:" , NULL , ""   , 1  };
-    info battery = { "battery" , "[ bat: "  , NULL , ""   , 60 };
-    info time    = { "time"    , "["        , NULL , ""   , 30 };
-} big_box;
+void *update_time(Info*);
+void *update_battery(Info*);
+void *update_ram(Info*);
+void *update_sound(Info*);
+void *update_loadavg(Info*);
+void *update_netdev(Info*);
+void *update_stat(Info*);
+
+static Info infos[] = {
+//    name        displayed text            sleep function
+    { "stat"    , "["        , NULL , "] " , 1  , update_netdev  },
+    { "cpu"     , "["        , NULL , ""   , 1  , update_stat    },
+    { "loadavg" , "["        , NULL , ""   , 10 , update_loadavg },
+    { "ram"     , "["        , NULL , ""   , 5  , update_ram     },
+    { "sound"   , "[ audio:" , NULL , ""   , 1  , update_sound   },
+    { "battery" , "[ bat: "  , NULL , ""   , 60 , update_battery },
+    { "time"    , "["        , NULL , ""   , 30 , update_time    },
+};

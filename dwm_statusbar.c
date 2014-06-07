@@ -1,20 +1,13 @@
 /* dwm_statusbar
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
- * vim:ts=4:sw=4:aifoldmethod=syntax:
+ * vim:ts=4:sw=4:ai:foldmethod=syntax:
  */
 
 #include "dwm_statusbar.h"
 
 void error(char*);
-void *update_time(void*);
-void *update_battery(void*);
-void *update_ram(void*);
-void *update_sound(void*);
-void *update_loadavg(void*);
-void *update_netdev(void*);
-void *update_stat(void*);
-void *update_status(void*);
+void *update_status();
 int pthread_setname_np(pthread_t, char*);
 
 void
@@ -24,8 +17,8 @@ error(char *msg)
     exit(1);
 }
 
-void
-*update_time(info* st)
+void*
+update_time(Info* st)
 {
     usleep(rand() % 100000);
     struct tm*  timeinfo;
@@ -50,8 +43,8 @@ void
     }
 }
 
-void
-*update_battery(info* st)
+void*
+update_battery(Info* st)
 {
     usleep(rand() % 100000);
     FILE* fd_now;
@@ -146,14 +139,13 @@ void
     }
 }
 
-void
-*update_ram(info* st)
+void*
+update_ram(Info* st)
 {
     usleep(rand() % 100000);
     int  ram[5];
     char buffer[1024];
     FILE *fp;
-    int size;
     char* new_text;
     char* old_text;
     int size;
@@ -201,13 +193,14 @@ void
     }
 }
 
-void
-*update_sound(info* st)
+void*
+update_sound(Info* st)
 {
     long vol;
     long vol_min;
     long vol_max;
     float volume;
+    int switch_value;
     snd_mixer_t          *h_mixer;
     snd_mixer_selem_id_t *sid;
     snd_mixer_elem_t     *elem;
@@ -322,8 +315,8 @@ void
     }
 }
 
-void
-*update_loadavg(info* st)
+void*
+update_loadavg(Info* st)
 {
     usleep(rand() % 100000);
     double avg[3];
@@ -361,8 +354,8 @@ void
     }
 }
 
-void
-*update_netdev(info* st)
+void*
+update_netdev(Info* st)
 {
     usleep(rand() % 100000);
     FILE* fp;
@@ -447,8 +440,8 @@ void
     }
 }
 
-void
-*update_stat(info* st)
+void*
+update_stat(Info* st)
 {
     usleep(rand() % 100000);
 
@@ -459,6 +452,7 @@ void
     double       load[CPU_CORES +1];
     char* new_text;
     char* old_text;
+    int   size;
 
     while(1)
     {
@@ -520,24 +514,25 @@ void
     }
 }
 
-void
-*update_status(big_box* all)
+void*
+update_status()
 {
     Display* display;
     if (!(display = XOpenDisplay(NULL)))
         error("Cannot open display");
 
     char displayed_text[256];
+    int i;
     while(1)
     {
-        strncpy( displayed_text, all[0].before, strlen(all[0]->before) );
-        strncat( displayed_text, all[0].text,   strlen(all[0]->text  ) );
-        strncat( displayed_text, all[0].after,  strlen(all[0]->after ) );
-        for (i = 1; i < sizeof(big_box)/sizeof(info); i++)
+        strncpy( displayed_text, infos[0].before, strlen(infos[0].before) );
+        strncat( displayed_text, infos[0].text,   strlen(infos[0].text  ) );
+        strncat( displayed_text, infos[0].after,  strlen(infos[0].after ) );
+        for (i = 1; i < sizeof(infos)/sizeof(Info); i++)
         {
-            strncat( displayed_text, all[i].before, strlen(all[i]->before) );
-            strncat( displayed_text, all[i].text,   strlen(all[i]->text  ) );
-            strncat( displayed_text, all[i].after,  strlen(all[i]->after ) );
+            strncat( displayed_text, infos[i].before, strlen(infos[i].before) );
+            strncat( displayed_text, infos[i].text,   strlen(infos[i].text  ) );
+            strncat( displayed_text, infos[i].after,  strlen(infos[i].after ) );
         }
         XStoreName(display, DefaultRootWindow(display), displayed_text);
         XSync(display, False);
@@ -550,15 +545,15 @@ int
 main ()
 {
     int i;
-    for (i = 0; i < sizeof(big_box)/sizeof(info); i++)
+    for (i = 0; i < sizeof(infos)/sizeof(Info); i++)
     {
         pthread_t thread;
-        if( pthread_create(&thread, NULL, big_box[i]->fun, big_box[i]) != 0)
+        if( pthread_create(&thread, NULL, (void*)infos[i].fun, ((void*) &infos[i])) != 0)
             error("couldn't create thread\n");
-        pthread_setname_np(thread, big_box[i].name);
+        pthread_setname_np(thread, infos[i].name);
     }
-    pthread_t t;
-    if( pthread_create(&thread, NULL, &update_status, big_box != 0)
+    pthread_t thread;
+    if( pthread_create(&thread, NULL, (void*)update_status, NULL) != 0)
         error("couldn't create thread\n");
     pthread_setname_np(thread, "status");
 
