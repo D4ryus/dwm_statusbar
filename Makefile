@@ -4,6 +4,7 @@
 # vim:noexpandtab
 
 FLAGS = -lX11 -lasound -lpthread -Wall -g
+HEADER = config.h dwm_statusbar.h
 
-dwm_statusbar: dwm_statusbar.c dwm_statusbar.h
+dwm_statusbar: dwm_statusbar.c ${HEADER}
 	gcc dwm_statusbar.c -o dwm_statusbar ${FLAGS}
