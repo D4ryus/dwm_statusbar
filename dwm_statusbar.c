@@ -18,21 +18,68 @@ error(char *msg)
 }
 
 void*
-update_time(Info* st)
+update_stat(Info* st)
 {
     usleep(rand() % 100000);
-    struct tm*  timeinfo;
-    time_t rawtime;
-    int    size = 16;
-    char*  new_text;
-    char*  old_text;
-    localtime(&rawtime);
+
+    FILE*        fp;
+    char         buffer[1024];
+    /* saves up user/nice/system/idle/total/usage/usageb4/totalb4 */
+    unsigned int cpu[CPU_CORES +1][8];
+    double       load[CPU_CORES +1];
+    char* new_text;
+    char* old_text;
+    int   size;
+
     while(1)
     {
-        time(&rawtime);
-        timeinfo = localtime(&rawtime);
+        fp = fopen(STAT, "r");
+        if(fp == NULL)
+        {
+            size = 11;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "stat_error", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
+            continue;
+        }
+
+        /* read from file into cpu array */
+        int i;
+        for(i = 0; i < CPU_CORES + 1; i++)
+        {
+            fgets(buffer, 1024, fp);
+            sscanf(buffer, "%*s %u %u %u %u",
+                    &cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
+        }
+        fclose(fp);
+
+        /* calculate total and used cpu */
+        for(i = 0; i < CPU_CORES + 1; i++)
+        {
+            cpu[i][4] = cpu[i][0] + cpu[i][1] + cpu[i][2] + cpu[i][3];
+            cpu[i][5] = cpu[i][4] - cpu[i][3];
+        }
+
+        /* calculate percentage usage */
+        for(i = 0; i < CPU_CORES + 1; i++)
+        {
+            load[i] = ((double)( cpu[i][5] - cpu[i][6] )+0.5) /
+                ((double)( cpu[i][4] - cpu[i][7] )+0.5) * 100;
+            cpu[i][6] = cpu[i][5];
+            cpu[i][7] = cpu[i][4];
+        }
+
+        size = 17;
         new_text = malloc(sizeof(char) * size);
-        strncpy(new_text, asctime(timeinfo), size);
+        sprintf(new_text, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
+                load[0], load[1], load[2], load[3], load[4]);
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
@@ -45,27 +92,32 @@ update_time(Info* st)
 }
 
 void*
-update_battery(Info* st)
+update_netdev(Info* st)
 {
     usleep(rand() % 100000);
-    FILE* fd_now;
-    FILE* fd_full;
-    FILE* fd_status;
-    int   energy_now;
-    int   energy_full;
-    char  energy_status[12];
-    int   battery_percentage;
-    int   size;
-    char* old_text;
+    FILE* fp;
+
+    unsigned int up_b4[3];
+    unsigned int down_b4[3];
+    unsigned int up = 0;
+    unsigned int down = 0;
+    unsigned int received;
+    unsigned int send;
+    int count;
+    int empty_count;
+    char buffer[1024];
+    char interface[12];
     char* new_text;
+    char* old_text;
+    int size;
     while(1)
     {
-        fd_now    = fopen(BATTERY_NOW, "r");
-        if(fd_now   == NULL)
+        fp = fopen(NETDEV, "r");
+        if(fp == NULL)
         {
-            size = 6;
-            new_text = malloc(sizeof(char)*size);
-            strncpy(new_text, "on AC", size);
+            size = 13;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "netdev_error", size);
             old_text = st->text;
             st->text = new_text;
             if(old_text != NULL)
@@ -76,18 +128,69 @@ update_battery(Info* st)
             sleep(st->sleep);
             continue;
         }
-        else
+        fgets(buffer, 1024, fp);
+        fgets(buffer, 1024, fp);
+        count = 0;
+        empty_count = 0;
+        while(fgets(buffer, 1024, fp))
         {
-            fscanf(fd_now, "%d", &energy_now);
-            fclose(fd_now);
+            sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u",
+                                                 interface, &received, &send);
+            up   = send     - up_b4[count];
+            down = received - down_b4[count];
+            up_b4[count]   = send;
+            down_b4[count] = received;
+            if((up == 0) || (down == 0))
+            {
+                count++;
+                empty_count++;
+                continue;
+            }
+            size = 24;
+            new_text = malloc(sizeof(char) * size);
+            sprintf(new_text, "%s %u/%u kBs", interface, up/1000, down/1000);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            count++;
         }
-
-        fd_full   = fopen(BATTERY_FULL, "r");
-        if(fd_full   == NULL)
+        fclose(fp);
+        if(empty_count == count)
         {
-            size = 6;
-            new_text = malloc(sizeof(char)*size);
-            strncpy(new_text, "on AC", size);
+            size = 7;
+            new_text = malloc(sizeof(char) * size);
+            sprintf(new_text, "-/- kBs");
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+        }
+        sleep(st->sleep);
+    }
+}
+
+void*
+update_loadavg(Info* st)
+{
+    usleep(rand() % 100000);
+    double avg[3];
+    char* new_text;
+    char* old_text;
+    int size;
+    while(1)
+    {
+        if(getloadavg(avg, 3) < 0)
+        {
+            size = 12;
+            new_text = malloc(sizeof(char) * size);
+            strncpy(new_text, "avg's error", size);
             old_text = st->text;
             st->text = new_text;
             if(old_text != NULL)
@@ -98,37 +201,9 @@ update_battery(Info* st)
             sleep(st->sleep);
             continue;
         }
-        else
-        {
-            fscanf(fd_full, "%d", &energy_full);
-            fclose(fd_full);
-        }
-
-        fd_status = fopen(BATTERY_STATUS, "r");
-        if(fd_status == NULL)
-        {
-            size = 6;
-            new_text = malloc(sizeof(char)*size);
-            strncpy(new_text, "on AC", size);
-            old_text = st->text;
-            st->text = new_text;
-            if(old_text != NULL)
-            {
-                free(old_text);
-                old_text = NULL;
-            }
-            sleep(st->sleep);
-            continue;
-        }
-        else
-        {
-            fscanf(fd_status, "%s", energy_status);
-            fclose(fd_status);
-        }
-
-        battery_percentage = (int)((((float)energy_now) / ((float)energy_full) * 100.0) + 0.5);
-        new_text = malloc(sizeof(energy_status) + sizeof(char) * 6);
-        sprintf(new_text, "%s %d%s", energy_status, battery_percentage, "%");
+        size = 12;
+        new_text = malloc(sizeof(char) * size);
+        sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
@@ -317,20 +392,27 @@ update_sound(Info* st)
 }
 
 void*
-update_loadavg(Info* st)
+update_battery(Info* st)
 {
     usleep(rand() % 100000);
-    double avg[3];
-    char* new_text;
+    FILE* fd_now;
+    FILE* fd_full;
+    FILE* fd_status;
+    int   energy_now;
+    int   energy_full;
+    char  energy_status[12];
+    int   battery_percentage;
+    int   size;
     char* old_text;
-    int size;
+    char* new_text;
     while(1)
     {
-        if(getloadavg(avg, 3) < 0)
+        fd_now    = fopen(BATTERY_NOW, "r");
+        if(fd_now   == NULL)
         {
-            size = 12;
-            new_text = malloc(sizeof(char) * size);
-            strncpy(new_text, "avg's error", size);
+            size = 6;
+            new_text = malloc(sizeof(char)*size);
+            strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
             if(old_text != NULL)
@@ -341,9 +423,59 @@ update_loadavg(Info* st)
             sleep(st->sleep);
             continue;
         }
-        size = 12;
-        new_text = malloc(sizeof(char) * size);
-        sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
+        else
+        {
+            fscanf(fd_now, "%d", &energy_now);
+            fclose(fd_now);
+        }
+
+        fd_full   = fopen(BATTERY_FULL, "r");
+        if(fd_full   == NULL)
+        {
+            size = 6;
+            new_text = malloc(sizeof(char)*size);
+            strncpy(new_text, "on AC", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
+            continue;
+        }
+        else
+        {
+            fscanf(fd_full, "%d", &energy_full);
+            fclose(fd_full);
+        }
+
+        fd_status = fopen(BATTERY_STATUS, "r");
+        if(fd_status == NULL)
+        {
+            size = 6;
+            new_text = malloc(sizeof(char)*size);
+            strncpy(new_text, "on AC", size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+            sleep(st->sleep);
+            continue;
+        }
+        else
+        {
+            fscanf(fd_status, "%s", energy_status);
+            fclose(fd_status);
+        }
+
+        battery_percentage = (int)((((float)energy_now) / ((float)energy_full) * 100.0) + 0.5);
+        new_text = malloc(sizeof(energy_status) + sizeof(char) * 6);
+        sprintf(new_text, "%s %d%s", energy_status, battery_percentage, "%");
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
@@ -356,153 +488,21 @@ update_loadavg(Info* st)
 }
 
 void*
-update_netdev(Info* st)
+update_time(Info* st)
 {
     usleep(rand() % 100000);
-    FILE* fp;
-
-    unsigned int up_b4[3];
-    unsigned int down_b4[3];
-    unsigned int up = 0;
-    unsigned int down = 0;
-    unsigned int received;
-    unsigned int send;
-    int count;
-    int empty_count;
-    char buffer[1024];
-    char interface[12];
-    char* new_text;
-    char* old_text;
-    int size;
+    struct tm*  timeinfo;
+    time_t rawtime;
+    int    size = 16;
+    char*  new_text;
+    char*  old_text;
+    localtime(&rawtime);
     while(1)
     {
-        fp = fopen(NETDEV, "r");
-        if(fp == NULL)
-        {
-            size = 13;
-            new_text = malloc(sizeof(char) * size);
-            strncpy(new_text, "netdev_error", size);
-            old_text = st->text;
-            st->text = new_text;
-            if(old_text != NULL)
-            {
-                free(old_text);
-                old_text = NULL;
-            }
-            sleep(st->sleep);
-            continue;
-        }
-        fgets(buffer, 1024, fp);
-        fgets(buffer, 1024, fp);
-        count = 0;
-        empty_count = 0;
-        while(fgets(buffer, 1024, fp))
-        {
-            sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u",
-                                                 interface, &received, &send);
-            up   = send     - up_b4[count];
-            down = received - down_b4[count];
-            up_b4[count]   = send;
-            down_b4[count] = received;
-            if((up == 0) || (down == 0))
-            {
-                count++;
-                empty_count++;
-                continue;
-            }
-            size = 24;
-            new_text = malloc(sizeof(char) * size);
-            sprintf(new_text, "%s %u/%u kBs", interface, up/1000, down/1000);
-            old_text = st->text;
-            st->text = new_text;
-            if(old_text != NULL)
-            {
-                free(old_text);
-                old_text = NULL;
-            }
-            count++;
-        }
-        fclose(fp);
-        if(empty_count == count)
-        {
-            size = 7;
-            new_text = malloc(sizeof(char) * size);
-            sprintf(new_text, "-/- kBs");
-            old_text = st->text;
-            st->text = new_text;
-            if(old_text != NULL)
-            {
-                free(old_text);
-                old_text = NULL;
-            }
-        }
-        sleep(st->sleep);
-    }
-}
-
-void*
-update_stat(Info* st)
-{
-    usleep(rand() % 100000);
-
-    FILE*        fp;
-    char         buffer[1024];
-    /* saves up user/nice/system/idle/total/usage/usageb4/totalb4 */
-    unsigned int cpu[CPU_CORES +1][8];
-    double       load[CPU_CORES +1];
-    char* new_text;
-    char* old_text;
-    int   size;
-
-    while(1)
-    {
-        fp = fopen(STAT, "r");
-        if(fp == NULL)
-        {
-            size = 11;
-            new_text = malloc(sizeof(char) * size);
-            strncpy(new_text, "stat_error", size);
-            old_text = st->text;
-            st->text = new_text;
-            if(old_text != NULL)
-            {
-                free(old_text);
-                old_text = NULL;
-            }
-            sleep(st->sleep);
-            continue;
-        }
-
-        /* read from file into cpu array */
-        int i;
-        for(i = 0; i < CPU_CORES + 1; i++)
-        {
-            fgets(buffer, 1024, fp);
-            sscanf(buffer, "%*s %u %u %u %u",
-                    &cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
-        }
-        fclose(fp);
-
-        /* calculate total and used cpu */
-        for(i = 0; i < CPU_CORES + 1; i++)
-        {
-            cpu[i][4] = cpu[i][0] + cpu[i][1] + cpu[i][2] + cpu[i][3];
-            cpu[i][5] = cpu[i][4] - cpu[i][3];
-        }
-
-        /* calculate percentage usage */
-        for(i = 0; i < CPU_CORES + 1; i++)
-        {
-            load[i] = ((double)( cpu[i][5] - cpu[i][6] )+0.5) /
-                ((double)( cpu[i][4] - cpu[i][7] )+0.5) * 100;
-            cpu[i][6] = cpu[i][5];
-            cpu[i][7] = cpu[i][4];
-        }
-
-        size = 17;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
         new_text = malloc(sizeof(char) * size);
-        sprintf(new_text, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
-                load[0], load[1], load[2], load[3], load[4]);
+        strncpy(new_text, asctime(timeinfo), size);
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
