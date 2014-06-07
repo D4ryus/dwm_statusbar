@@ -521,41 +521,32 @@ void
 }
 
 void
-*update_status(info* st)
+*update_status(big_box* all)
 {
     Display* display;
     if (!(display = XOpenDisplay(NULL)))
         error("Cannot open display");
 
+    char displayed_text[256];
     while(1)
     {
-        sprintf(displayed_text,
-                "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-                displayed_begin,
-                displayed_netdev_info,  displayed_netdev,  displayed_between,
-                displayed_stat_info,    displayed_stat,    displayed_between,
-                displayed_loadavg_info, displayed_loadavg, displayed_between,
-                displayed_ram_info,     displayed_ram,     displayed_between,
-                displayed_sound_info,   displayed_sound,   displayed_between,
-                displayed_battery_info, displayed_battery, displayed_between,
-                displayed_time_info,    displayed_time,
-                displayed_end
-               );
+        strncpy( displayed_text, all[0].before, strlen(all[0]->before) );
+        strncat( displayed_text, all[0].text,   strlen(all[0]->text  ) );
+        strncat( displayed_text, all[0].after,  strlen(all[0]->after ) );
+        for (i = 1; i < sizeof(big_box)/sizeof(info); i++)
+        {
+            strncat( displayed_text, all[i].before, strlen(all[i]->before) );
+            strncat( displayed_text, all[i].text,   strlen(all[i]->text  ) );
+            strncat( displayed_text, all[i].after,  strlen(all[i]->after ) );
+        }
         XStoreName(display, DefaultRootWindow(display), displayed_text);
         XSync(display, False);
-
-        if( fast_refresh_flag == 1 )
-        {
-            usleep(fast_refresh);
-            continue;
-        } else {
-            sleep(update_sleep);
-        }
+        sleep(REFRESH);
     }
     XCloseDisplay(display);
 }
 
-    int
+int
 main ()
 {
     int i;
