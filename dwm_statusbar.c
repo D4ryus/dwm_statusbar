@@ -152,7 +152,7 @@ update_netdev(Info* st)
                 empty_count++;
                 continue;
             }
-            size = 24;
+            size = 50;
             new_text = malloc(sizeof(char) * size);
             bzero(new_text, size);
             sprintf(new_text, "%s %u/%u kBs", interface, up/1024, down/1024);
