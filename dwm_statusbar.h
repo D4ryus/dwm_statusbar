@@ -19,7 +19,6 @@
 // input to get current time
 #include <time.h>
 // net includes
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
