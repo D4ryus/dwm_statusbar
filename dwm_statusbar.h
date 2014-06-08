@@ -5,19 +5,23 @@
  * vim:ts=4:sw=4:ai:foldmethod=syntax:
  */
 
-/* std inputs */
+// std inputs
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-/* input to display error messages */
+// input to display error messages
 #include <errno.h>
-/* Alsa sound includes to get volume */
+// Alsa sound includes to get volume
 #include <alsa/asoundlib.h>
-/* Xlibs to connect to xserver */
+// Xlibs to connect to xserver
 #include <X11/Xlib.h>
-/* input to get current time */
+// input to get current time
 #include <time.h>
+// net includes
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 typedef struct _thread_info Info;
 
@@ -33,10 +37,11 @@ _thread_info
 };
 
 // forward declaration of used functions
-void *update_time(Info*);
-void *update_battery(Info*);
-void *update_ram(Info*);
-void *update_sound(Info*);
-void *update_loadavg(Info*);
+void *update_netmsg(Info*);
 void *update_netdev(Info*);
 void *update_stat(Info*);
+void *update_loadavg(Info*);
+void *update_ram(Info*);
+void *update_sound(Info*);
+void *update_battery(Info*);
+void *update_time(Info*);

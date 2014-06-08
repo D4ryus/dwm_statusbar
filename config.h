@@ -15,10 +15,13 @@ const static char* NETDEV         = "/proc/net/dev";
 const static char* STAT           = "/proc/stat";
 const static int   CPU_CORES      = 4;
 const static int   REFRESH        = 1;
+const static char* PORT           = "83838"; // port for net message
+static const int   MSG_LENGTH     = 256;   // msg length for net message
 
 // array with all values, just outcommend stuff u do not want to display
 static Info infos[] = {
 //    name      , first char* , dynamic char*, end char* , sleep , function
+    { "netmsg"  , "["         , NULL         , "] "      , 0     , update_netmsg  },
     { "netdev"  , "["         , NULL         , "] "      , 1     , update_netdev  },
     { "stat"    , "["         , NULL         , "] "      , 1     , update_stat    },
 //  { "loadavg" , "["         , NULL         , "] "      , 10    , update_loadavg },

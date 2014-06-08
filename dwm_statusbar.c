@@ -20,6 +20,83 @@ error(char *msg)
 }
 
 void*
+update_netmsg(Info* st)
+{
+    usleep(rand() % 100000);
+
+    int    my_socket;
+    int    port;
+    int    connected_socket;
+    int    client_length;
+    char   buffer[MSG_LENGTH];
+    struct sockaddr_in server_addr;
+    struct sockaddr_in client_addr;
+    char*  new_text;
+    char*  old_text;
+    int    size;
+
+    my_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    if( my_socket < 0 )
+        error("could not create my_socket");
+
+    bzero((char *) &server_addr, sizeof(server_addr));
+    port = atoi(PORT);
+
+    server_addr.sin_port        = htons(port);
+    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    server_addr.sin_family      = AF_INET;
+
+    if( bind(my_socket, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0 )
+        error("could not bind");
+
+    listen(my_socket, 5);
+    client_length = sizeof(client_addr);
+    connected_socket = accept(my_socket, (struct sockaddr *) &client_addr,
+            (socklen_t *) &client_length);
+    while(connected_socket)
+    {
+        bzero(buffer,MSG_LENGTH);
+        if( read(connected_socket, buffer, MSG_LENGTH - 1) < 0)
+            error("could not read");
+
+        if(buffer[0] == '0')
+        {
+            old_text = st->text;
+            st->text = NULL;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+        }
+        else
+        {
+            size = strlen(buffer) + 1;
+            new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
+            strncpy(new_text, buffer, size);
+            old_text = st->text;
+            st->text = new_text;
+            if(old_text != NULL)
+            {
+                free(old_text);
+                old_text = NULL;
+            }
+        }
+        if( write(connected_socket, "OK", 2) < 0)
+            error("could not write");
+
+        connected_socket = accept( my_socket, (struct sockaddr *) &client_addr,
+                (socklen_t *) &client_length);
+    }
+    close(connected_socket);
+    close(my_socket);
+    error("error on accept");
+    return 0;
+}
+
+void*
 update_stat(Info* st)
 {
     usleep(rand() % 100000);
