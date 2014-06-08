@@ -397,7 +397,7 @@ update_sound(Info* st)
         size = 8;
         new_text = malloc(sizeof(char) * size);
         bzero(new_text, size);
-        sprintf(new_text, "%s %3.0f%%", (switch_value == 1) ? "on" : "off", volume);
+        sprintf(new_text, "%s %.0f%%", (switch_value == 1) ? "on" : "off", volume);
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
