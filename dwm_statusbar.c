@@ -40,6 +40,7 @@ update_stat(Info* st)
         {
             size = 11;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "stat_error", size);
             old_text = st->text;
             st->text = new_text;
@@ -80,6 +81,7 @@ update_stat(Info* st)
 
         size = 17;
         new_text = malloc(sizeof(char) * size);
+        bzero(new_text, size);
         sprintf(new_text, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
                 load[0], load[1], load[2], load[3], load[4]);
         old_text = st->text;
@@ -107,7 +109,8 @@ update_netdev(Info* st)
     unsigned int send;
     int count;
     int empty_count;
-    char buffer[1024];
+    int bsize = 512;
+    char buffer[bsize];
     char interface[12];
     char* new_text;
     char* old_text;
@@ -119,6 +122,7 @@ update_netdev(Info* st)
         {
             size = 13;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "netdev_error", size);
             old_text = st->text;
             st->text = new_text;
@@ -130,11 +134,11 @@ update_netdev(Info* st)
             sleep(st->sleep);
             continue;
         }
-        fgets(buffer, 1024, fp);
-        fgets(buffer, 1024, fp);
+        fgets(buffer, bsize, fp);
+        fgets(buffer, bsize, fp);
         count = 0;
         empty_count = 0;
-        while(fgets(buffer, 1024, fp))
+        while(fgets(buffer, bsize, fp))
         {
             sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u",
                                                  interface, &received, &send);
@@ -150,7 +154,8 @@ update_netdev(Info* st)
             }
             size = 24;
             new_text = malloc(sizeof(char) * size);
-            sprintf(new_text, "%s %u/%u kBs", interface, up/1000, down/1000);
+            bzero(new_text, size);
+            sprintf(new_text, "%s %u/%u kBs", interface, up/1024, down/1024);
             old_text = st->text;
             st->text = new_text;
             if(old_text != NULL)
@@ -165,6 +170,7 @@ update_netdev(Info* st)
         {
             size = 7;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             sprintf(new_text, "-/- kBs");
             old_text = st->text;
             st->text = new_text;
@@ -192,6 +198,7 @@ update_loadavg(Info* st)
         {
             size = 12;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "avg's error", size);
             old_text = st->text;
             st->text = new_text;
@@ -205,6 +212,7 @@ update_loadavg(Info* st)
         }
         size = 12;
         new_text = malloc(sizeof(char) * size);
+        bzero(new_text, size);
         sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
         old_text = st->text;
         st->text = new_text;
@@ -234,6 +242,7 @@ update_ram(Info* st)
         {
             size = 11;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "ram error", size);
             old_text = st->text;
             st->text = new_text;
@@ -259,6 +268,7 @@ update_ram(Info* st)
 
         size = 8;
         new_text = malloc(sizeof(char) * size);
+        bzero(new_text, size);
         sprintf(new_text, "%d mb", ram[2] / 1024);
         old_text = st->text;
         st->text = new_text;
@@ -291,6 +301,7 @@ update_sound(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "error", size);
             old_text = st->text;
             st->text = new_text;
@@ -307,6 +318,7 @@ update_sound(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "error", size);
             old_text = st->text;
             st->text = new_text;
@@ -323,6 +335,7 @@ update_sound(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "error", size);
             old_text = st->text;
             st->text = new_text;
@@ -339,6 +352,7 @@ update_sound(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "error", size);
             old_text = st->text;
             st->text = new_text;
@@ -359,6 +373,7 @@ update_sound(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char) * size);
+            bzero(new_text, size);
             strncpy(new_text, "error", size);
             old_text = st->text;
             st->text = new_text;
@@ -381,6 +396,7 @@ update_sound(Info* st)
 
         size = 8;
         new_text = malloc(sizeof(char) * size);
+        bzero(new_text, size);
         sprintf(new_text, "%s %3.0f%%", (switch_value == 1) ? "on" : "off", volume);
         old_text = st->text;
         st->text = new_text;
@@ -414,6 +430,7 @@ update_battery(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char)*size);
+            bzero(new_text, size);
             strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
@@ -436,6 +453,7 @@ update_battery(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char)*size);
+            bzero(new_text, size);
             strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
@@ -458,6 +476,7 @@ update_battery(Info* st)
         {
             size = 6;
             new_text = malloc(sizeof(char)*size);
+            bzero(new_text, size);
             strncpy(new_text, "on AC", size);
             old_text = st->text;
             st->text = new_text;
@@ -502,7 +521,8 @@ update_time(Info* st)
     {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        new_text = malloc(sizeof(char) * (size+1));
+        new_text = malloc(sizeof(char) * (size));
+        bzero(new_text, size);
         strncpy(new_text, asctime(timeinfo), size);
         new_text[size] = '\0';
         old_text = st->text;
@@ -528,11 +548,12 @@ update_status()
 
     sleep(2);
 
-    char displayed_text[512];
+    int bsize = 512;
+    char displayed_text[bsize];
     int i;
     while(1)
     {
-        strcpy(displayed_text, "");
+        bzero(displayed_text, bsize);
         for (i = 0; i < sizeof(infos)/sizeof(Info); i++)
         {
             if(infos[i].text != NULL)
