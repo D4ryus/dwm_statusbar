@@ -14,6 +14,7 @@ const static char* RAM            = "/proc/meminfo";
 const static char* NETDEV         = "/proc/net/dev";
 const static char* STAT           = "/proc/stat";
 const static int   CPU_CORES      = 4;
+const static int   NETDEVCOUNT    = 3;
 const static int   REFRESH        = 1;
 const static char* PORT           = "83838"; // port for net message
 static const int   MSG_LENGTH     = 256;   // msg length for net message

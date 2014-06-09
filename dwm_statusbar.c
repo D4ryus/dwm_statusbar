@@ -190,8 +190,8 @@ update_netdev(Info* st)
     usleep(rand() % 100000);
     FILE* fp;
 
-    unsigned int up_b4[3]   = {0, 0, 0};
-    unsigned int down_b4[3] = {0, 0, 0};
+    unsigned int up_b4[NETDEVCOUNT];
+    unsigned int down_b4[NETDEVCOUNT];
     unsigned int up         = 0;
     unsigned int down       = 0;
     unsigned int received   = 0;
@@ -205,6 +205,14 @@ update_netdev(Info* st)
     char* new_text;
     char* old_text;
     int size;
+
+    int i;
+    for (i = 0; i < NETDEVCOUNT; i++)
+    {
+        up_b4[i]   = 0;
+        down_b4[i] = 0;
+    }
+
     while(1)
     {
         fp = fopen(NETDEV, "r");
