@@ -282,7 +282,7 @@ void*
 update_loadavg(Info* st)
 {
     usleep(rand() % 100000);
-    double avg[3];
+    double avg[3] = {0.0, 0.0, 0.0};
     char* new_text;
     char* old_text;
     int size;
@@ -304,7 +304,7 @@ update_loadavg(Info* st)
             sleep(st->sleep);
             continue;
         }
-        size = 12;
+        size = 15;
         new_text = malloc(sizeof(char) * size);
         bzero(new_text, size);
         sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
