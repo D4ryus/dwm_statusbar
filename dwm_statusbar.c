@@ -112,6 +112,15 @@ update_stat(Info* st)
     char* old_text;
     int   size;
 
+    int i;
+    int ii;
+    for (i = 0; i < CPU_CORES +1; i++)
+    {
+        load[i] = 0.0;
+        for (ii = 0; ii < 8; ii++)
+            cpu[i][ii] = 0;
+    }
+
     while(1)
     {
         fp = fopen(STAT, "r");
@@ -133,9 +142,10 @@ update_stat(Info* st)
         }
 
         /* read from file into cpu array */
-        int i;
+        //int i;
         for(i = 0; i < CPU_CORES + 1; i++)
         {
+            bzero(buffer, 1024);
             fgets(buffer, 1024, fp);
             sscanf(buffer, "%*s %u %u %u %u",
                     &cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
@@ -158,7 +168,7 @@ update_stat(Info* st)
             cpu[i][7] = cpu[i][4];
         }
 
-        size = 17;
+        size = 23;
         new_text = malloc(sizeof(char) * size);
         bzero(new_text, size);
         sprintf(new_text, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
@@ -180,17 +190,18 @@ update_netdev(Info* st)
     usleep(rand() % 100000);
     FILE* fp;
 
-    unsigned int up_b4[3];
-    unsigned int down_b4[3];
-    unsigned int up = 0;
-    unsigned int down = 0;
-    unsigned int received;
-    unsigned int send;
+    unsigned int up_b4[3]   = {0, 0, 0};
+    unsigned int down_b4[3] = {0, 0, 0};
+    unsigned int up         = 0;
+    unsigned int down       = 0;
+    unsigned int received   = 0;
+    unsigned int send       = 0;
     int count;
     int empty_count;
     int bsize = 512;
     char buffer[bsize];
-    char interface[12];
+    int isize = 12;
+    char interface[isize];
     char* new_text;
     char* old_text;
     int size;
@@ -217,21 +228,25 @@ update_netdev(Info* st)
         fgets(buffer, bsize, fp);
         count = 0;
         empty_count = 0;
+        bzero(buffer, bsize);
+        bzero(interface, isize);
         while(fgets(buffer, bsize, fp))
         {
-            sscanf(buffer, "%s %u %*u %*u %*u %*u %*u %*u %*u %u",
+            bzero(interface, isize);
+            sscanf(buffer, "%11s %u %*u %*u %*u %*u %*u %*u %*u %u",
                                                  interface, &received, &send);
+            bzero(buffer, bsize);
             up   = send     - up_b4[count];
             down = received - down_b4[count];
             up_b4[count]   = send;
             down_b4[count] = received;
-            if((up == 0) || (down == 0))
+            if((up == 0) && (down == 0))
             {
                 count++;
                 empty_count++;
                 continue;
             }
-            size = 50;
+            size = 32;
             new_text = malloc(sizeof(char) * size);
             bzero(new_text, size);
             sprintf(new_text, "%s %u/%u kBs", interface, up/1024, down/1024);
@@ -247,7 +262,7 @@ update_netdev(Info* st)
         fclose(fp);
         if(empty_count == count)
         {
-            size = 7;
+            size = 8;
             new_text = malloc(sizeof(char) * size);
             bzero(new_text, size);
             sprintf(new_text, "-/- kBs");
@@ -546,7 +561,7 @@ update_time(Info* st)
     usleep(rand() % 100000);
     struct tm*  timeinfo;
     time_t rawtime;
-    int    size = 16;
+    int    size = 17;
     char*  new_text;
     char*  old_text;
     while(1)
@@ -555,8 +570,7 @@ update_time(Info* st)
         timeinfo = localtime(&rawtime);
         new_text = malloc(sizeof(char) * (size));
         bzero(new_text, size);
-        strncpy(new_text, asctime(timeinfo), size);
-        new_text[size] = '\0';
+        strncpy(new_text, asctime(timeinfo), size-1);
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
@@ -590,11 +604,15 @@ update_status()
         bzero(displayed_text, bsize);
         for (i = 0; i < sizeof(infos)/sizeof(Info); i++)
         {
-            if(infos[i].text != NULL)
+            if((infos[i].text != NULL) && (infos[i].text[0] != '\0'))
             {
-                strncat( displayed_text, infos[i].before, strlen(infos[i].before) );
-                strncat( displayed_text, infos[i].text,   strlen(infos[i].text  ) );
-                strncat( displayed_text, infos[i].after,  strlen(infos[i].after ) );
+                if((infos[i].before != NULL) && (infos[i].before[0] != '\0'))
+                    strncat(displayed_text, infos[i].before, strlen(infos[i].before));
+
+                strncat(displayed_text, infos[i].text, strlen(infos[i].text));
+
+                if((infos[i].after != NULL)  && (infos[i].after[0] != '\0'))
+                    strncat(displayed_text, infos[i].after, strlen(infos[i].after));
             }
         }
         if(!print_only_flag)
