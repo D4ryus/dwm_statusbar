@@ -16,7 +16,7 @@ const static char* STAT           = "/proc/stat";
 const static int   CPU_CORES      = 4;
 const static int   NETDEVCOUNT    = 3;
 const static int   REFRESH        = 1;
-const static char* PORT           = "83838"; // port for net message
+const static char* PORT           = "8383"; // port for net message
 static const int   MSG_LENGTH     = 256;   // msg length for net message
 
 // array with all values, just outcommend stuff u do not want to display

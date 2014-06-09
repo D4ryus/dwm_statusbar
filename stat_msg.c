@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
-static const char* PORT = "83838";
+static const char* PORT = "8383";
 static const int   MSG_LENGTH = 256;
 
 void
