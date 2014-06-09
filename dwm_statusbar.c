@@ -12,6 +12,8 @@ void error(char*);
 void *update_status();
 int pthread_setname_np(pthread_t, char*);
 
+int print_only_flag = 0;
+
 void
 error(char *msg)
 {
@@ -570,11 +572,13 @@ void*
 update_status()
 {
     Display* display;
-    if (!(display = XOpenDisplay(NULL)))
-        error("Cannot open display");
-
-    XStoreName(display, DefaultRootWindow(display), "init statusbar...");
-    XSync(display, False);
+    if(!print_only_flag)
+    {
+        if (!(display = XOpenDisplay(NULL)))
+            error("Cannot open display");
+        XStoreName(display, DefaultRootWindow(display), "init statusbar...");
+        XSync(display, False);
+    }
 
     sleep(2);
 
@@ -593,16 +597,30 @@ update_status()
                 strncat( displayed_text, infos[i].after,  strlen(infos[i].after ) );
             }
         }
-        XStoreName(display, DefaultRootWindow(display), displayed_text);
-        XSync(display, False);
+        if(!print_only_flag)
+        {
+            XStoreName(display, DefaultRootWindow(display), displayed_text);
+            XSync(display, False);
+        }
+        else
+        {
+            printf("%s\n", displayed_text);
+        }
         sleep(REFRESH);
     }
-    XCloseDisplay(display);
+    if(!print_only_flag)
+        XCloseDisplay(display);
 }
 
 int
-main ()
+main(int argc, const char *argv[])
 {
+    if(argc > 1)
+    {
+        if(    (argv[1][0] == '-')
+            && (argv[1][1] == 't') )
+            print_only_flag = 1;
+    }
     int i;
     for (i = 0; i < sizeof(infos)/sizeof(Info); i++)
     {
