@@ -108,6 +108,7 @@ update_stat(Info* st)
     /* saves up user/nice/system/idle/total/usage/usageb4/totalb4 */
     unsigned int cpu[CPU_CORES +1][8];
     double       load[CPU_CORES +1];
+    char  buff[4];
     char* new_text;
     char* old_text;
     int   size;
@@ -168,11 +169,17 @@ update_stat(Info* st)
             cpu[i][7] = cpu[i][4];
         }
 
-        size = 23;
+        size = 5 + (CPU_CORES * 3);
         new_text = malloc(sizeof(char) * size);
         bzero(new_text, size);
-        sprintf(new_text, "%3.0f|%3.0f%3.0f%3.0f%3.0f",
-                load[0], load[1], load[2], load[3], load[4]);
+        for (i = 0; i < CPU_CORES+1; i++)
+        {
+            bzero(buff, 4);
+            sprintf(buff, "%3.0f", load[i]);
+            strncat(new_text, buff, 3);
+            if(i == 0)
+                strncat(new_text, "|", 1);
+        }
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL)
