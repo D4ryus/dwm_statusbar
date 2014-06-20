@@ -367,12 +367,12 @@ void* update_sound(Info* st)
     int   size;
 
     while(1) {
-        if (    ( snd_mixer_open          (&h_mixer, 1         ) < 0 )
-             || ( snd_mixer_attach        ( h_mixer, "default" ) < 0 )
-             || ( snd_mixer_selem_register( h_mixer, NULL, NULL) < 0 )
-             || ( snd_mixer_load          ( h_mixer            ) < 0 ) )
+        if (    (snd_mixer_open          (&h_mixer, 1         ) < 0)
+             || (snd_mixer_attach        ( h_mixer, "default" ) < 0)
+             || (snd_mixer_selem_register( h_mixer, NULL, NULL) < 0)
+             || (snd_mixer_load          ( h_mixer            ) < 0) )
         {
-            size = 16;
+            size     = 16;
             new_text = malloc(sizeof(char) * size);
             bzero(new_text, size);
             strncpy(new_text, "snd_mixer error", size);
@@ -394,7 +394,7 @@ void* update_sound(Info* st)
             size = 6;
             new_text = malloc(sizeof(char) * size);
             bzero(new_text, size);
-            strncpy(new_text, "error", size);
+            strncpy(new_text, "find error", size);
             old_text = st->text;
             st->text = new_text;
             if(old_text != NULL) {
@@ -405,9 +405,9 @@ void* update_sound(Info* st)
             continue;
         }
 
-        snd_mixer_selem_get_playback_volume      (elem, SND_MIXER_SCHN_FRONT_LEFT, &vol);
-        snd_mixer_selem_get_playback_volume_range(elem, &vol_min, &vol_max);
-        snd_mixer_selem_get_playback_switch      (elem, SND_MIXER_SCHN_FRONT_LEFT, &switch_value);
+        snd_mixer_selem_get_playback_volume(       elem, SND_MIXER_SCHN_FRONT_LEFT, &vol);
+        snd_mixer_selem_get_playback_volume_range( elem, &vol_min, &vol_max);
+        snd_mixer_selem_get_playback_switch(       elem, SND_MIXER_SCHN_FRONT_LEFT, &switch_value);
 
         snd_mixer_close(h_mixer);
 
