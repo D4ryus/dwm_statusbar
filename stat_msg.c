@@ -50,8 +50,7 @@ main(int argc, char *argv[])
 
     bzero(buffer,MSG_LENGTH);
 
-    if ( argc < 2 )
-    {
+    if ( argc < 2 ) {
         fgets(buffer, MSG_LENGTH - 1, stdin);
         buffer[strlen(buffer)-1] = '\0';
     }

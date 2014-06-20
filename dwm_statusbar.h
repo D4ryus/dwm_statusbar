@@ -24,9 +24,7 @@
 
 typedef struct _thread_info Info;
 
-struct
-_thread_info
-{
+struct _thread_info {
     char* name;           // name of thread
     char* before;         // displayed text in front
     char* text;           // pointer to char array which will be updated by thread
