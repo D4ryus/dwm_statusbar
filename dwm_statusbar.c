@@ -20,7 +20,7 @@ void error(char *msg)
     exit(1);
 }
 
-void* update_netmsg(Info* st)
+void* update_netmsg(struct Info* st)
 {
     usleep(rand() % 100000);
 
@@ -91,7 +91,7 @@ void* update_netmsg(Info* st)
     return 0;
 }
 
-void* update_stat(Info* st)
+void* update_stat(struct Info* st)
 {
     usleep(rand() % 100000);
 
@@ -174,7 +174,7 @@ void* update_stat(Info* st)
     }
 }
 
-void* update_netdev(Info* st)
+void* update_netdev(struct Info* st)
 {
     usleep(rand() % 100000);
     FILE* fp;
@@ -266,7 +266,7 @@ void* update_netdev(Info* st)
     }
 }
 
-void* update_loadavg(Info* st)
+void* update_loadavg(struct Info* st)
 {
     usleep(rand() % 100000);
     double avg[3] = {0.0, 0.0, 0.0};
@@ -302,7 +302,7 @@ void* update_loadavg(Info* st)
     }
 }
 
-void* update_ram(Info* st)
+void* update_ram(struct Info* st)
 {
     usleep(rand() % 100000);
     int  ram[5];
@@ -352,7 +352,7 @@ void* update_ram(Info* st)
     }
 }
 
-void* update_sound(Info* st)
+void* update_sound(struct Info* st)
 {
     long  vol;
     long  vol_min;
@@ -427,7 +427,7 @@ void* update_sound(Info* st)
     }
 }
 
-void* update_battery(Info* st)
+void* update_battery(struct Info* st)
 {
     usleep(rand() % 100000);
     FILE* fd_now;
@@ -511,7 +511,7 @@ void* update_battery(Info* st)
     }
 }
 
-void* update_time(Info* st)
+void* update_time(struct Info* st)
 {
     usleep(rand() % 100000);
     struct tm*  timeinfo;
@@ -552,7 +552,7 @@ void* update_status()
     int i;
     while(1) {
         bzero(displayed_text, bsize);
-        for (i = 0; i < sizeof(infos)/sizeof(Info); i++) {
+        for (i = 0; i < sizeof(infos)/sizeof(struct Info); i++) {
             if((infos[i].text != NULL) && (infos[i].text[0] != '\0')) {
                 if((infos[i].before != NULL) && (infos[i].before[0] != '\0'))
                     strncat(displayed_text, infos[i].before, strlen(infos[i].before));
@@ -583,7 +583,7 @@ int main(int argc, const char *argv[])
             print_only_flag = 1;
     }
     int i;
-    for (i = 0; i < sizeof(infos)/sizeof(Info); i++) {
+    for (i = 0; i < sizeof(infos)/sizeof(struct Info); i++) {
         pthread_t thread;
         if( pthread_create(&thread, NULL, (void*)infos[i].fun, ((void*) &infos[i])) != 0)
             error("couldn't create thread\n");

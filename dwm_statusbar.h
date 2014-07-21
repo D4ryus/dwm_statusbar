@@ -22,23 +22,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-typedef struct _thread_info Info;
-
-struct _thread_info {
+struct Info {
     char* name;           // name of thread
     char* before;         // displayed text in front
     char* text;           // pointer to char array which will be updated by thread
     char* after;          // displayed text after dynamic text
     int   sleep;          // sleep time in seconds
-    void* (*fun) (Info*); // pointer to function which will update the text
+    void* (*fun) (struct Info*); // pointer to function which will update the text
 };
 
 // forward declaration of used functions
-void *update_netmsg(Info*);
-void *update_netdev(Info*);
-void *update_stat(Info*);
-void *update_loadavg(Info*);
-void *update_ram(Info*);
-void *update_sound(Info*);
-void *update_battery(Info*);
-void *update_time(Info*);
+void *update_netmsg(struct Info*);
+void *update_netdev(struct Info*);
+void *update_stat(struct Info*);
+void *update_loadavg(struct Info*);
+void *update_ram(struct Info*);
+void *update_sound(struct Info*);
+void *update_battery(struct Info*);
+void *update_time(struct Info*);

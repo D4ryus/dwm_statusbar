@@ -20,7 +20,7 @@ const static char* PORT           = "8383"; // port for net message
 static const int   MSG_LENGTH     = 256;   // msg length for net message
 
 // array with all values, just outcommend stuff u do not want to display
-static Info infos[] = {
+static struct Info infos[] = {
 //    name      , first char* , dynamic char*, end char* , sleep , function
     { "netmsg"  , "["         , NULL         , "] "      , 0     , update_netmsg  },
     { "netdev"  , "["         , NULL         , "] "      , 1     , update_netdev  },
