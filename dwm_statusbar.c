@@ -567,7 +567,8 @@ void* update_status()
             XStoreName(display, DefaultRootWindow(display), displayed_text);
             XSync(display, False);
         } else {
-            printf("%s\n", displayed_text);
+            printf("\r%s", displayed_text);
+            fflush(stdout);
         }
         sleep(REFRESH);
     }
