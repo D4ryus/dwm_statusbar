@@ -240,7 +240,7 @@ void* update_netdev(struct Info* st)
             size = 32;
             new_text = malloc(sizeof(char) * size);
             bzero(new_text, size);
-            sprintf(new_text, "%s %u/%u kBs", interface, up/1024, down/1024);
+            sprintf(new_text, "%s %u/%u kBs", interface, up >> 10, down >> 10);
             old_text = st->text;
             st->text = new_text;
             if(old_text != NULL) {
@@ -341,7 +341,7 @@ void* update_ram(struct Info* st)
         size = 8;
         new_text = malloc(sizeof(char) * size);
         bzero(new_text, size);
-        sprintf(new_text, "%d mb", ram[2] / 1024);
+        sprintf(new_text, "%d mb", ram[2] >> 10);
         old_text = st->text;
         st->text = new_text;
         if(old_text != NULL) {
