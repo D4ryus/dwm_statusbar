@@ -23,11 +23,11 @@
 #include <netinet/in.h>
 
 struct Info {
-    char* name;           // name of thread
-    char* before;         // displayed text in front
-    char* text;           // pointer to char array which will be updated by thread
-    char* after;          // displayed text after dynamic text
-    int   sleep;          // sleep time in seconds
+    char* name;   // name of thread
+    char* before; // displayed text in front
+    char* text;   // pointer to char array which will be updated by thread
+    char* after;  // displayed text after dynamic text
+    int   sleep;  // sleep time in seconds
     void* (*fun) (struct Info*); // pointer to function which will update the text
 };
 

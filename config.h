@@ -22,12 +22,12 @@ static const int   MSG_LENGTH     = 256;   // msg length for net message
 // array with all values, just outcommend stuff u do not want to display
 static struct Info infos[] = {
 //    name      , first char* , dynamic char*, end char* , sleep , function
-    { "netmsg"  , "["         , NULL         , "] "      , 0     , update_netmsg  },
     { "netdev"  , "["         , NULL         , "] "      , 1     , update_netdev  },
+    { "netmsg"  , "["         , NULL         , "] "      , 0     , update_netmsg  },
     { "stat"    , "["         , NULL         , "] "      , 1     , update_stat    },
 //  { "loadavg" , "["         , NULL         , "] "      , 10    , update_loadavg },
     { "ram"     , "["         , NULL         , "] "      , 5     , update_ram     },
-    { "sound"   , "[audio: "  , NULL         , "] "      , 1     , update_sound   },
-    { "battery" , "[bat: "    , NULL         , "] "      , 60    , update_battery },
+//  { "sound"   , "[audio: "  , NULL         , "] "      , 1     , update_sound   },
+//  { "battery" , "[bat: "    , NULL         , "] "      , 60    , update_battery },
     { "time"    , "["         , NULL         , "] "      , 30    , update_time    },
 };
