@@ -171,51 +171,46 @@ void*
 update_netdev(struct Info* st)
 {
 	usleep(rand() % 100000);
-	FILE* fp;
+	char* new_text;
 
 	unsigned int up_b4[NETDEVCOUNT];
 	unsigned int down_b4[NETDEVCOUNT];
-	unsigned int up = 0;
-	unsigned int down = 0;
-	unsigned int received = 0;
-	unsigned int send = 0;
-	int count;
-	int empty_count;
-	int bsize = 512;
-	char buffer[bsize];
-	int isize = 12;
-	char interface[isize];
-	char* new_text;
-	int size;
-
 	int i;
 	for (i = 0; i < NETDEVCOUNT; i++) {
 		up_b4[i] = 0;
 		down_b4[i] = 0;
 	}
 
+	FILE* fp;
 	while (1) {
+		char* buffer = malloc(sizeof(char) * 512);
 		fp = fopen(NETDEV, "r");
 		if (fp == NULL) {
-			size = 13;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			strncpy(new_text, "netdev_error", size);
+			new_text = malloc(sizeof(char) * 13);
+			bzero(new_text, 13);
+			strncpy(new_text, "netdev_error", 13);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
 		}
-		fgets(buffer, bsize, fp);
-		fgets(buffer, bsize, fp);
-		count = 0;
-		empty_count = 0;
-		bzero(buffer, bsize);
-		bzero(interface, isize);
-		while (fgets(buffer, bsize, fp)) {
-			bzero(interface, isize);
+		fgets(buffer, 512, fp);
+		fgets(buffer, 512, fp);
+		bzero(buffer, 512);
+		int first = 1;
+		char interface[12];
+		unsigned int up = 0;
+		unsigned int down = 0;
+		unsigned int received = 0;
+		unsigned int send = 0;
+		int count;
+		int empty_count = 0;
+		char* interface_text = malloc(sizeof(char) * 32 * NETDEVCOUNT);
+		for (count = 0; count < NETDEVCOUNT; count++) {
+			fgets(buffer, 512, fp);
+			bzero(interface, 12);
 			sscanf(buffer, "%11s %u %*u %*u %*u %*u %*u %*u %*u %u",
 						interface, &received, &send);
-			bzero(buffer, bsize);
+			bzero(buffer, 512);
 			up = send - up_b4[count];
 			down = received - down_b4[count];
 			up_b4[count] = send;
@@ -225,22 +220,29 @@ update_netdev(struct Info* st)
 				empty_count++;
 				continue;
 			}
-			size = 32;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			sprintf(new_text, "%s %u/%u kBs",
+			if (first) {
+				sprintf(interface_text, "%s %u/%u kBs ",
 					interface, up >> 10, down >> 10);
-			swap_text(st, new_text);
+				first = 0;
+			} else {
+				char* tmp = malloc(sizeof(char) * 32);
+				bzero(tmp, 32);
+				sprintf(tmp, " %s %u/%u kBs ",
+					interface, up >> 10, down >> 10);
+				strncat(interface_text, tmp, 32);
+				free(tmp);
+			}
 			count++;
 		}
+		swap_text(st, interface_text);
 		fclose(fp);
 		if (empty_count == count) {
-			size = 8;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
+			new_text = malloc(sizeof(char) * 8);
+			bzero(new_text, 8);
 			sprintf(new_text, "-/- kBs");
 			swap_text(st, new_text);
 		}
+		free(buffer);
 		sleep(st->sleep);
 	}
 }
@@ -488,6 +490,8 @@ update_status()
 			}
 		}
 		if (!print_only_flag) {
+			XStoreName(display, DefaultRootWindow(display), " ");
+			XSync(display, False);
 			XStoreName(display, DefaultRootWindow(display), displayed_text);
 			XSync(display, False);
 		} else {
