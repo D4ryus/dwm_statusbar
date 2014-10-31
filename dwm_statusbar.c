@@ -39,24 +39,17 @@ update_netmsg(struct Info* st)
 	usleep(rand() % 100000);
 
 	int my_socket;
-	int port;
 	int connected_socket;
-	int client_length;
 	char buffer[MSG_LENGTH];
 	struct sockaddr_in server_addr;
 	struct sockaddr_in client_addr;
-	char* new_text;
-	int size;
 
-	my_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-	if (my_socket < 0)
-		error("could not create my_socket");
+	if ((my_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		error("could not create socket");
 
 	bzero((char *) &server_addr, sizeof(server_addr));
-	port = atoi(PORT);
 
-	server_addr.sin_port = htons(port);
+	server_addr.sin_port = htons(atoi(PORT));
 	server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	server_addr.sin_family = AF_INET;
 
@@ -65,19 +58,19 @@ update_netmsg(struct Info* st)
 		error("could not bind");
 
 	listen(my_socket, 5);
-	client_length = sizeof(client_addr);
+	int client_length = sizeof(client_addr);
 	connected_socket = accept(my_socket, (struct sockaddr *) &client_addr,
 			(socklen_t *) &client_length);
 	while (connected_socket) {
-		bzero(buffer,MSG_LENGTH);
+		bzero(buffer, MSG_LENGTH);
 		if (read(connected_socket, buffer, MSG_LENGTH - 1) < 0)
 			error("could not read");
 
 		if (buffer[0] == '0') {
-                        swap_text(st, NULL);
+			swap_text(st, NULL);
 		} else {
-			size = strlen(buffer) + 1;
-			new_text = malloc(sizeof(char) * size);
+			int size = strlen(buffer) + 1;
+			char* new_text = malloc(sizeof(char) * size);
 			bzero(new_text, size);
 			strncpy(new_text, buffer, size);
 			swap_text(st, new_text);
@@ -100,13 +93,9 @@ update_stat(struct Info* st)
 	usleep(rand() % 100000);
 
 	FILE* fp;
-	char buffer[1024];
 	/* saves up user/nice/system/idle/total/usage/usageb4/totalb4 */
 	unsigned int cpu[CPU_CORES +1][8];
 	double load[CPU_CORES +1];
-	char buff[4];
-	char* new_text;
-	int size;
 
 	int i;
 	int ii;
@@ -116,20 +105,19 @@ update_stat(struct Info* st)
 			cpu[i][ii] = 0;
 	}
 
+	char* new_text;
 	while (1) {
-		fp = fopen(STAT, "r");
-		if (fp == NULL) {
-			size = 11;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			strncpy(new_text, "stat_error", size);
+		if ((fp = fopen(STAT, "r")) == NULL) {
+			new_text = malloc(sizeof(char) * 11);
+			bzero(new_text, 11);
+			strncpy(new_text, "stat_error", 11);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
 		}
 
 		/* read from file into cpu array */
-		//int i;
+		char buffer[1024];
 		for (i = 0; i < CPU_CORES + 1; i++) {
 			bzero(buffer, 1024);
 			fgets(buffer, 1024, fp);
@@ -138,6 +126,7 @@ update_stat(struct Info* st)
 		}
 		fclose(fp);
 
+		int i;
 		/* calculate total and used cpu */
 		for (i = 0; i < CPU_CORES + 1; i++) {
 			cpu[i][4] = cpu[i][0] + cpu[i][1] + cpu[i][2] + cpu[i][3];
@@ -152,9 +141,10 @@ update_stat(struct Info* st)
 			cpu[i][7] = cpu[i][4];
 		}
 
-		size = 5 + (CPU_CORES * 3);
+		int size = 5 + (CPU_CORES * 3);
 		new_text = malloc(sizeof(char) * size);
 		bzero(new_text, size);
+		char buff[4];
 		for (i = 0; i < CPU_CORES+1; i++) {
 			bzero(buff, 4);
 			sprintf(buff, "%3.0f", load[i]);
@@ -221,13 +211,13 @@ update_netdev(struct Info* st)
 				continue;
 			}
 			if (first) {
-				sprintf(interface_text, "%s %u/%u kBs ",
+				sprintf(interface_text, "%s %u/%u kBs",
 					interface, up >> 10, down >> 10);
 				first = 0;
 			} else {
 				char* tmp = malloc(sizeof(char) * 32);
 				bzero(tmp, 32);
-				sprintf(tmp, " %s %u/%u kBs ",
+				sprintf(tmp, " %s %u/%u kBs",
 					interface, up >> 10, down >> 10);
 				strncat(interface_text, tmp, 32);
 				free(tmp);
@@ -253,20 +243,17 @@ update_loadavg(struct Info* st)
 	usleep(rand() % 100000);
 	double avg[3] = {0.0, 0.0, 0.0};
 	char* new_text;
-	int size;
 	while (1) {
 		if (getloadavg(avg, 3) < 0) {
-			size = 12;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			strncpy(new_text, "avg's error", size);
+			new_text = malloc(sizeof(char) * 12);
+			bzero(new_text, 12);
+			strncpy(new_text, "avg's error", 12);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
 		}
-		size = 15;
-		new_text = malloc(sizeof(char) * size);
-		bzero(new_text, size);
+		new_text = malloc(sizeof(char) * 15);
+		bzero(new_text, 15);
 		sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
 		swap_text(st, new_text);
 		sleep(st->sleep);
@@ -281,14 +268,11 @@ update_ram(struct Info* st)
 	char buffer[1024];
 	FILE *fp;
 	char* new_text;
-	int size;
 	while (1) {
-		fp = fopen(RAM, "r");
-		if (fp == NULL) {
-			size = 11;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			strncpy(new_text, "ram error", size);
+		if ((fp = fopen(RAM, "r")) == NULL) {
+			new_text = malloc(sizeof(char) * 11);
+			bzero(new_text, 11);
+			strncpy(new_text, "ram error", 11);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
@@ -304,9 +288,8 @@ update_ram(struct Info* st)
 
 		ram[2] = ram[0] - (ram[1] + ram[3] + ram[4]); // ram used
 
-		size = 8;
-		new_text = malloc(sizeof(char) * size);
-		bzero(new_text, size);
+		new_text = malloc(sizeof(char) * 8);
+		bzero(new_text, 8);
 		sprintf(new_text, "%d mb", ram[2] >> 10);
 		swap_text(st, new_text);
 		sleep(st->sleep);
@@ -325,7 +308,6 @@ update_sound(struct Info* st)
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem;
 	char* new_text;
-	int size;
 
 	while (1) {
 		if ((snd_mixer_open (&h_mixer, 1 ) < 0)
@@ -333,10 +315,9 @@ update_sound(struct Info* st)
 			 || (snd_mixer_selem_register( h_mixer, NULL, NULL) < 0)
 			 || (snd_mixer_load ( h_mixer ) < 0) )
 		{
-			size = 16;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			strncpy(new_text, "snd_mixer error", size);
+			new_text = malloc(sizeof(char) * 16);
+			bzero(new_text, 16);
+			strncpy(new_text, "snd_mixer error", 16);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
@@ -347,10 +328,9 @@ update_sound(struct Info* st)
 		snd_mixer_selem_id_set_name(sid, "Master");
 
 		if ((elem = snd_mixer_find_selem(h_mixer, sid)) == NULL) {
-			size = 6;
-			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
-			strncpy(new_text, "find error", size);
+			new_text = malloc(sizeof(char) * 6);
+			bzero(new_text, 6);
+			strncpy(new_text, "find error", 6);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
@@ -367,9 +347,8 @@ update_sound(struct Info* st)
 
 		volume = 100.0 * vol / vol_max;
 
-		size = 8;
-		new_text = malloc(sizeof(char) * size);
-		bzero(new_text, size);
+		new_text = malloc(sizeof(char) * 8);
+		bzero(new_text, 8);
 		sprintf(new_text, "%s %.0f%%",
 				(switch_value == 1) ? "on" : "off", volume);
 		swap_text(st, new_text);
@@ -388,15 +367,11 @@ update_battery(struct Info* st)
 	int energy_full;
 	char energy_status[12];
 	int battery_percentage;
-	int size;
 	char* new_text;
 	while (1) {
-		fd_now = fopen(BATTERY_NOW, "r");
-		if (fd_now == NULL) {
-			size = 6;
-			new_text = malloc(sizeof(char)*size);
-			bzero(new_text, size);
-			strncpy(new_text, "on AC", size);
+		if ((fd_now = fopen(BATTERY_NOW, "r")) == NULL) {
+			new_text = malloc(sizeof(char) * 6);
+			strncpy(new_text, "on AC", 6);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
@@ -405,12 +380,9 @@ update_battery(struct Info* st)
 			fclose(fd_now);
 		}
 
-		fd_full = fopen(BATTERY_FULL, "r");
-		if (fd_full == NULL) {
-			size = 6;
-			new_text = malloc(sizeof(char)*size);
-			bzero(new_text, size);
-			strncpy(new_text, "on AC", size);
+		if ((fd_full = fopen(BATTERY_FULL, "r")) == NULL) {
+			new_text = malloc(sizeof(char) * 6);
+			strncpy(new_text, "on AC", 6);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
@@ -419,12 +391,9 @@ update_battery(struct Info* st)
 			fclose(fd_full);
 		}
 
-		fd_status = fopen(BATTERY_STATUS, "r");
-		if (fd_status == NULL) {
-			size = 6;
-			new_text = malloc(sizeof(char)*size);
-			bzero(new_text, size);
-			strncpy(new_text, "on AC", size);
+		if ((fd_status = fopen(BATTERY_STATUS, "r")) == NULL) {
+			new_text = malloc(sizeof(char) * 6);
+			strncpy(new_text, "on AC", 6);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
@@ -447,14 +416,13 @@ update_time(struct Info* st)
 	usleep(rand() % 100000);
 	struct tm* timeinfo;
 	time_t rawtime;
-	int size = 17;
 	char* new_text;
 	while (1) {
 		time(&rawtime);
 		timeinfo = localtime(&rawtime);
-		new_text = malloc(sizeof(char) * (size));
-		bzero(new_text, size);
-		strncpy(new_text, asctime(timeinfo), size-1);
+		new_text = malloc(sizeof(char) * 17);
+		bzero(new_text, 17);
+		strncpy(new_text, asctime(timeinfo), 16);
 		swap_text(st, new_text);
 		sleep(st->sleep);
 	}
@@ -470,14 +438,12 @@ update_status()
 		XStoreName(display, DefaultRootWindow(display), "init statusbar...");
 		XSync(display, False);
 	}
-
 	sleep(2);
 
-	int bsize = 512;
-	char displayed_text[bsize];
-	int i;
+	char displayed_text[512];
 	while (1) {
-		bzero(displayed_text, bsize);
+		bzero(displayed_text, 512);
+		int i;
 		for (i = 0; i < sizeof(infos)/sizeof(struct Info); i++) {
 			if ((infos[i].text != NULL) && (infos[i].text[0] != '\0')) {
 				if ((infos[i].before != NULL) && (infos[i].before[0] != '\0'))
