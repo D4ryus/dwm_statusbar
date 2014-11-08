@@ -45,23 +45,23 @@ main(int argc, char *argv[])
                                                            server->h_length );
     server_addr.sin_port = htons(port);
 
-    if ( connect(my_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    if (connect(my_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
         error("could not connect");
 
     bzero(buffer,MSG_LENGTH);
 
-    if ( argc < 2 ) {
+    if (argc < 2) {
         fgets(buffer, MSG_LENGTH - 1, stdin);
         buffer[strlen(buffer)-1] = '\0';
-    }
-    else
+    } else {
         sscanf(argv[1], "%s", buffer);
+    }
 
-    if ( write(my_socket, buffer, strlen(buffer) ) < 0 )
+    if (write(my_socket, buffer, strlen(buffer) ) < 0)
         error("could not write");
 
     bzero(buffer,MSG_LENGTH);
-    if ( read(my_socket,buffer,255) < 0 )
+    if (read(my_socket,buffer,255) < 0)
         error("could not read");
 
     printf("%s\n", buffer);

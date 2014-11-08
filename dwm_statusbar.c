@@ -195,6 +195,7 @@ update_netdev(struct Info* st)
 		int count;
 		int empty_count = 0;
 		char* interface_text = malloc(sizeof(char) * 32 * NETDEVCOUNT);
+		bzero(interface_text, 32 * NETDEVCOUNT);
 		for (count = 0; count < NETDEVCOUNT; count++) {
 			fgets(buffer, 512, fp);
 			bzero(interface, 12);
@@ -206,7 +207,6 @@ update_netdev(struct Info* st)
 			up_b4[count] = send;
 			down_b4[count] = received;
 			if ((up == 0) && (down == 0)) {
-				count++;
 				empty_count++;
 				continue;
 			}
@@ -217,22 +217,21 @@ update_netdev(struct Info* st)
 			} else {
 				char* tmp = malloc(sizeof(char) * 32);
 				bzero(tmp, 32);
-				sprintf(tmp, " %s %u/%u kBs",
+				sprintf(tmp, " | %s %u/%u kBs",
 					interface, up >> 10, down >> 10);
 				strncat(interface_text, tmp, 32);
 				free(tmp);
 			}
-			count++;
 		}
-		swap_text(st, interface_text);
 		fclose(fp);
+		free(buffer);
+		swap_text(st, interface_text);
 		if (empty_count == count) {
 			new_text = malloc(sizeof(char) * 8);
 			bzero(new_text, 8);
 			sprintf(new_text, "-/- kBs");
 			swap_text(st, new_text);
 		}
-		free(buffer);
 		sleep(st->sleep);
 	}
 }
@@ -444,7 +443,7 @@ update_status()
 	while (1) {
 		bzero(displayed_text, 512);
 		int i;
-		for (i = 0; i < sizeof(infos)/sizeof(struct Info); i++) {
+		for (i = 0; i < sizeof(infos) / sizeof(struct Info); i++) {
 			if ((infos[i].text != NULL) && (infos[i].text[0] != '\0')) {
 				if ((infos[i].before != NULL) && (infos[i].before[0] != '\0'))
 					strncat(displayed_text, infos[i].before, strlen(infos[i].before));
@@ -461,7 +460,7 @@ update_status()
 			XStoreName(display, DefaultRootWindow(display), displayed_text);
 			XSync(display, False);
 		} else {
-			printf("\r%s", displayed_text);
+			printf("%s\n", displayed_text);
 			fflush(stdout);
 		}
 		sleep(REFRESH);
