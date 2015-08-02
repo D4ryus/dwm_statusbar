@@ -13,9 +13,9 @@ static const char *BATTERY_NOW    = "/sys/class/power_supply/BAT0/energy_now";
 static const char *RAM            = "/proc/meminfo";
 static const char *NETDEV         = "/proc/net/dev";
 static const char *STAT           = "/proc/stat";
+static const char *PORT           = "8383";
 static const int CPU_CORES        = 4;
 static const int NETDEVCOUNT      = 3;
-static const char *PORT           = "8383";
 static const uint8_t REFRESH      = 1;
 static const uint16_t MSG_LENGTH  = 256;
 
