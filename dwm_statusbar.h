@@ -2,7 +2,7 @@
  * author: d4ryus - https://github.com/d4ryus/
  * inspired by several ideas from dwm.suckless.org
  * file: dwm_statusbar.h
- * vim:ts=4:sw=4:ai:foldmethod=syntax:
+ * vim:ts=8:sw=8:noet
  */
 
 // std inputs
@@ -27,9 +27,14 @@ struct Info {
     char* before; // displayed text in front
     char* text;   // pointer to char array which will be updated by thread
     char* after;  // displayed text after dynamic text
-    int   sleep;  // sleep time in seconds
+    uint8_t sleep;  // sleep time in seconds
     void* (*fun) (struct Info*); // pointer to function which will update the text
 };
+
+void error(char *);
+void *update_status(void);
+int pthread_setname_np(pthread_t, char *);
+void swap_text(struct Info *, char *);
 
 // forward declaration of used functions
 void *update_netmsg(struct Info*);
