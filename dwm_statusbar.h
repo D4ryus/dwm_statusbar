@@ -32,6 +32,7 @@ struct Info {
 };
 
 void error(char *);
+char *fmt_size(uint64_t, char[7]);
 void *update_status(void);
 int pthread_setname_np(pthread_t, char *);
 void swap_text(struct Info *, char *);

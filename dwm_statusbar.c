@@ -28,6 +28,51 @@ swap_text(struct Info *st, char *new_text)
 	}
 }
 
+char *
+fmt_size(uint64_t size, char fmt_size[7])
+{
+	char *type;
+	uint64_t new_size;
+	uint64_t xb; /* 8xb */
+	uint64_t tb; /* 8tb */
+	uint64_t gb; /* 8gb */
+	uint64_t mb; /* 8mb */
+	uint64_t kb; /* 8kb */
+
+	new_size = 0;
+
+	xb = (uint64_t)1 << 53;
+	tb = (uint64_t)1 << 43;
+	gb = (uint64_t)1 << 33;
+	mb = (uint64_t)1 << 23;
+	kb = (uint64_t)1 << 13;
+
+	if (size > xb) {
+		new_size = size >> 50;
+		type = "xb";
+	} else if (size > tb) {
+		new_size = size >> 40;
+		type = "tb";
+	} else if (size > gb) {
+		new_size = size >> 30;
+		type = "gb";
+	} else if (size > mb) {
+		new_size = size >> 20;
+		type = "mb";
+	} else if (size > kb) {
+		new_size = size >> 10;
+		type = "kb";
+	} else {
+		new_size = size;
+		type = "b ";
+	}
+
+	snprintf(fmt_size, (size_t)7, "%4llu%s",
+	    (long long unsigned int)new_size, type);
+
+	return fmt_size;
+}
+
 void *
 update_netmsg(struct Info *st)
 {
@@ -44,7 +89,7 @@ update_netmsg(struct Info *st)
 		error("could not create socket");
 	}
 
-	bzero((char *) &server_addr, sizeof(server_addr));
+	memset((char *) &server_addr, '\0', sizeof(server_addr));
 
 	server_addr.sin_port = htons(atoi(PORT));
 	server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -60,7 +105,7 @@ update_netmsg(struct Info *st)
 	connected_socket = accept(my_socket, (struct sockaddr *) &client_addr,
 			       (socklen_t *) &client_length);
 	while (connected_socket) {
-		bzero(buffer, MSG_LENGTH);
+		memset(buffer, '\0', MSG_LENGTH);
 		if (read(connected_socket, buffer, MSG_LENGTH - 1) < 0) {
 			error("could not read");
 		}
@@ -73,7 +118,7 @@ update_netmsg(struct Info *st)
 
 			size = strlen(buffer) + 1;
 			new_text = malloc(sizeof(char) * size);
-			bzero(new_text, size);
+			memset(new_text, '\0', size);
 			strncpy(new_text, buffer, size);
 			swap_text(st, new_text);
 		}
@@ -119,7 +164,7 @@ update_stat(struct Info *st)
 
 		if ((fp = fopen(STAT, "r")) == NULL) {
 			new_text = malloc(sizeof(char) * 11);
-			bzero(new_text, 11);
+			memset(new_text, '\0', 11);
 			strncpy(new_text, "stat_error", 11);
 			swap_text(st, new_text);
 			sleep(st->sleep);
@@ -129,7 +174,7 @@ update_stat(struct Info *st)
 
 		/* read from file into cpu array */
 		for (i = 0; i < CPU_CORES + 1; i++) {
-			bzero(buffer, 1024);
+			memset(buffer, '\0', 1024);
 			fgets(buffer, 1024, fp);
 			sscanf(buffer, "%*s %u %u %u %u",
 				&cpu[i][0], &cpu[i][1], &cpu[i][2], &cpu[i][3]);
@@ -154,9 +199,9 @@ update_stat(struct Info *st)
 
 		size = 5 + (CPU_CORES * 3);
 		new_text = malloc(sizeof(char) * size);
-		bzero(new_text, size);
+		memset(new_text, '\0', size);
 		for (i = 0; i < CPU_CORES+1; i++) {
-			bzero(buff, 4);
+			memset(buff, '\0', 4);
 			sprintf(buff, "%3.0f", load[i]);
 			strncat(new_text, buff, 3);
 			if (i == 0) {
@@ -168,6 +213,28 @@ update_stat(struct Info *st)
 	}
 }
 
+/*
+ * the displayed interface string will look like this:
+ * enp0s25: 1024mb/1024gb\0
+ * |       ||   | ||   | `------------------------- string termination (1 char)
+ * |       ||   | ||   `-------------------- integrity of downloadsize (2 char)
+ * |       ||   | |`--------------------------- current download speed (4 char)
+ * |       ||   | `----------------------------------------- seperator (1 char)
+ * |       ||   `---------------------------- integrity of upload size (2 char)
+ * |       |`------------------------------------ current upload speed (4 char)
+ * |       `---------------------------------------------------- space (1 char)
+ * `------------------------------- interface name with semicolon (max 13 char)
+ *
+ * on multiple interfaces text will change to:
+ * enp0s25: 1024mb/1024gb | wlp3s0: 1024mb/1024gb\0
+ * `--------.-----------´`.´`---------.---------´
+ *          |             |           `------------ 2nd interface (max 27 char)
+ *          |             `-------------- space pipe and another space (3 char)
+ *          `-------------------------------------- 1st interface (max 27 char)
+ *
+ * so the string size is: NETDEVCOUNT * (27 + 3) + 1, 27 for each interface,
+ * 3 for each seperator. 1 for the \0
+ */
 void *
 update_netdev(struct Info *st)
 {
@@ -177,14 +244,16 @@ update_netdev(struct Info *st)
 	int i;
 	FILE *fp;
 	int first;
-	char interface[12];
+	char interface_name[14];
+	uint64_t rec;
+	uint64_t snd;
 	uint64_t up;
 	uint64_t down;
-	uint64_t received;
-	uint64_t send;
+	char fmt_up[7];
+	char fmt_down[7];
 	int count;
 	int empty_count;
-	char *interface_text;
+	size_t interface_text_length = NETDEVCOUNT * (27 + 3) + 3;
 
 	usleep((uint)rand() % 100000);
 
@@ -194,66 +263,68 @@ update_netdev(struct Info *st)
 	}
 
 	while (1) {
-		char *buffer;
+		char buffer[512];
 
-		buffer = malloc(sizeof(char) * 512);
 		fp = fopen(NETDEV, "r");
 		if (fp == NULL) {
 			new_text = malloc(sizeof(char) * 13);
-			bzero(new_text, 13);
+			memset(new_text, '\0', 13);
 			strncpy(new_text, "netdev_error", 13);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
 		}
-		fgets(buffer, 512, fp);
-		fgets(buffer, 512, fp);
-		bzero(buffer, 512);
 		first = 1;
 		up = 0;
 		down = 0;
-		received = 0;
-		send = 0;
+		rec = 0;
+		snd = 0;
 		empty_count = 0;
-		interface_text = malloc(sizeof(char) * 32 * (size_t)NETDEVCOUNT);
-		bzero(interface_text, 32 * NETDEVCOUNT);
+		new_text = malloc(sizeof(char) * interface_text_length);
+		memset(new_text, '\0', interface_text_length);
+
+		// throw away first 2 lines
+		fgets(buffer, 512, fp);
+		fgets(buffer, 512, fp);
 		for (count = 0; count < NETDEVCOUNT; count++) {
-			char *tmp;
+			memset(buffer, '\0', 512);
+			memset(interface_name, '\0', 13);
 
 			fgets(buffer, 512, fp);
-			bzero(interface, 12);
 			sscanf(buffer,
 			    "%11s %lu %*u %*u %*u %*u %*u %*u %*u %lu",
-			    interface, &received, &send);
-			bzero(buffer, 512);
-			up = send - up_b4[count];
-			down = received - down_b4[count];
-			up_b4[count] = send;
-			down_b4[count] = received;
+			    interface_name, &rec, &snd);
+			up = snd - up_b4[count];
+			down = rec - down_b4[count];
+			up_b4[count] = snd;
+			down_b4[count] = rec;
 			if ((up == 0) && (down == 0)) {
 				empty_count++;
 				continue;
 			}
 			if (first) {
-				sprintf(interface_text, "%s %lu/%lu kBs",
-				    interface, up >> 10, down >> 10);
+				snprintf(new_text, 27, "%s %6s/%6s",
+				    interface_name,
+				    fmt_size(up, fmt_up),
+				    fmt_size(down, fmt_down));
 				first = 0;
 			} else {
-				tmp = malloc(sizeof(char) * 32);
-				bzero(tmp, 32);
-				sprintf(tmp, " | %s %lu/%lu kBs",
-				    interface, up >> 10, down >> 10);
-				strncat(interface_text, tmp, 32);
-				free(tmp);
+				char tmp[31];
+
+				memset(tmp, '\0', 31);
+				snprintf(tmp, 30, " | %s %6s/%6s",
+				    interface_name,
+				    fmt_size(up, fmt_up),
+				    fmt_size(down, fmt_down));
+				strncat(new_text, tmp, 31);
 			}
 		}
 		fclose(fp);
-		free(buffer);
-		swap_text(st, interface_text);
+		swap_text(st, new_text);
 		if (empty_count == count) {
-			new_text = malloc(sizeof(char) * 8);
-			bzero(new_text, 8);
-			sprintf(new_text, "-/- kBs");
+			new_text = malloc(sizeof(char) * 4);
+			memset(new_text, '\0', 4);
+			strncpy(new_text, "-/-", 4);
 			swap_text(st, new_text);
 		}
 		sleep(st->sleep);
@@ -271,14 +342,14 @@ update_loadavg(struct Info *st)
 	while (1) {
 		if (getloadavg(avg, 3) < 0) {
 			new_text = malloc(sizeof(char) * 12);
-			bzero(new_text, 12);
+			memset(new_text, '\0', 12);
 			strncpy(new_text, "avg's error", 12);
 			swap_text(st, new_text);
 			sleep(st->sleep);
 			continue;
 		}
 		new_text = malloc(sizeof(char) * 15);
-		bzero(new_text, 15);
+		memset(new_text, '\0', 15);
 		sprintf(new_text, "%.2f %.2f %.2f", avg[0], avg[1], avg[2]);
 		swap_text(st, new_text);
 		sleep(st->sleep);
@@ -300,7 +371,7 @@ update_ram(struct Info *st)
 
 		if ((fp = fopen(RAM, "r")) == NULL) {
 			new_text = malloc(sizeof(char) * 11);
-			bzero(new_text, 11);
+			memset(new_text, '\0', 11);
 			strncpy(new_text, "ram error", 11);
 			swap_text(st, new_text);
 			sleep(st->sleep);
@@ -318,7 +389,7 @@ update_ram(struct Info *st)
 		ram[2] = ram[0] - (ram[1] + ram[3] + ram[4]); // ram used
 
 		new_text = malloc(sizeof(char) * 8);
-		bzero(new_text, 8);
+		memset(new_text, '\0', 8);
 		sprintf(new_text, "%d mb", ram[2] >> 10);
 		swap_text(st, new_text);
 		sleep(st->sleep);
@@ -345,7 +416,7 @@ update_sound(struct Info *st)
 		    || (snd_mixer_load ( h_mixer ) < 0) )
 		{
 			new_text = malloc(sizeof(char) * 16);
-			bzero(new_text, 16);
+			memset(new_text, '\0', 16);
 			strncpy(new_text, "snd_mixer error", 16);
 			swap_text(st, new_text);
 			sleep(st->sleep);
@@ -358,7 +429,7 @@ update_sound(struct Info *st)
 
 		if ((elem = snd_mixer_find_selem(h_mixer, sid)) == NULL) {
 			new_text = malloc(sizeof(char) * 6);
-			bzero(new_text, 6);
+			memset(new_text, '\0', 6);
 			strncpy(new_text, "find error", 6);
 			swap_text(st, new_text);
 			sleep(st->sleep);
@@ -377,7 +448,7 @@ update_sound(struct Info *st)
 		volume = 100.0f * (float)vol / (float)vol_max;
 
 		new_text = malloc(sizeof(char) * 8);
-		bzero(new_text, 8);
+		memset(new_text, '\0', 8);
 		sprintf(new_text, "%s %.0f%%",
 		    (switch_value == 1) ? "on" : "off", volume);
 		swap_text(st, new_text);
@@ -458,7 +529,7 @@ update_time(struct Info *st)
 		time(&rawtime);
 		timeinfo = localtime(&rawtime);
 		new_text = malloc(sizeof(char) * 17);
-		bzero(new_text, 17);
+		memset(new_text, '\0', 17);
 		strncpy(new_text, asctime(timeinfo), 16);
 		swap_text(st, new_text);
 		sleep(st->sleep);
@@ -486,7 +557,7 @@ update_status()
 	while (1) {
 		size_t i;
 
-		bzero(displayed_text, 512);
+		memset(displayed_text, '\0', 512);
 		for (i = 0; i < sizeof(infos) / sizeof(struct Info); i++) {
 			if ((infos[i].text == NULL)
 			    || (infos[i].text[0] == '\0')) {
