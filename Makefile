@@ -1,15 +1,94 @@
 # Makefile for dwm_statusbar
 # author: d4ryus - https://github.com/d4ryus/
 # X11 libs needed, also posix threads and alsa libs
-# vim:noexpandtab
+# vim:ts=8:sw=8:noet:
 
-FLAGS = -lX11 -lasound -lpthread -Wall -g
-HEADER = config.h dwm_statusbar.h
+# magic place
 
-all: dwm_statusbar stat_msg
+CC = gcc
 
-dwm_statusbar: dwm_statusbar.c ${HEADER}
-	gcc dwm_statusbar.c -o dwm_statusbar ${FLAGS}
+EXECUTABLE = dwm_statusbar
 
-stat_msg: stat_msg.c
-	gcc stat_msg.c -o stat_msg
+OBJS = dwm_statusbar.o
+
+GPROF_FILE = performance.txt
+
+# posix threads
+LFLAGS = -lX11 -lasound -lpthread
+
+# default flags
+CFLAGS = -Wall \
+         -Wstrict-prototypes \
+         -Wmissing-prototypes \
+         -Wno-main \
+         -Wno-uninitialized \
+         -Wbad-function-cast \
+         -Wcast-align \
+         -Wcast-qual \
+         -Wextra \
+         -Wmissing-declarations \
+         -Wpointer-arith \
+         -Wshadow \
+         -Wsign-compare \
+         -Wuninitialized \
+         -Wunused \
+         -Wno-unused-parameter \
+         -Wnested-externs \
+         -Wunreachable-code \
+         -Winline \
+         -Wdisabled-optimization \
+         -Wconversion \
+         -Wfloat-equal \
+         -Wswitch \
+         -Wswitch-default \
+         -Wtrigraphs \
+         -Wsequence-point \
+         -Wimplicit \
+         -Wstack-protector \
+         -Woverlength-strings \
+         -Waddress \
+         -Wdeclaration-after-statement
+
+# CFLAGS += -std=c99
+# CFLAGS += -pedantic
+# CFLAGS += -Wredundant-decls
+# CFLAGS += -Werror
+# CFLAGS += -Wpadded
+CFLAGS += -fPIC
+CFLAGS += -ggdb
+CFLAGS += -pg
+CFLAGS += -O3
+CFLAGS += -D_FILE_OFFSET_BITS=64
+
+.PHONY : all
+all : depend $(EXECUTABLE)
+
+.PHONY : $(EXECUTABLE)
+$(EXECUTABLE) : $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LFLAGS)
+
+-include .depend
+
+.PHONY : depend
+depend:
+	$(CC) -E -MM *.c > .depend
+
+.PHONY : clean
+clean :
+	rm $(OBJS) $(EXECUTABLE) .depend
+
+# targets to run
+run_$(EXECUTABLE) : $(EXECUTABLE)
+	./$<
+
+perf :
+	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
+
+graph : perf
+	gprof2dot $(GPROF_FILE) -n0 -e0 > graph.dot
+	dot -Tsvg graph.dot -o graph.svg
+	sfdp -Gsize=100! \
+             -Gsplines=true \
+             -Goverlap=prism \
+             -Tpng graph.dot \
+             > graph.png
