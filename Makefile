@@ -13,8 +13,7 @@ OBJS = dwm_statusbar.o
 
 GPROF_FILE = performance.txt
 
-# posix threads
-LFLAGS = -lX11 -lasound -lpthread
+LFLAGS = -lX11 -lasound -lpthread -pg
 
 # default flags
 CFLAGS = -Wall \
@@ -79,7 +78,7 @@ clean :
 
 # targets to run
 run_$(EXECUTABLE) : $(EXECUTABLE)
-	./$<
+	./$(EXECUTABLE)
 
 perf :
 	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
