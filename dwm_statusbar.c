@@ -18,6 +18,13 @@ error(char *msg)
 }
 
 void
+quit(int signum)
+{
+	printf("terminating...\n");
+	exit(0);
+}
+
+void
 swap_text(struct Info *st, char *new_text)
 {
 	char *tmp = st->text;
@@ -599,6 +606,11 @@ main(int argc, const char *argv[])
 {
 	size_t i;
 	pthread_t thread;
+	struct sigaction action;
+
+	memset(&action, 0, sizeof(struct sigaction));
+	action.sa_handler = quit;
+	sigaction(SIGTERM, &action, NULL);
 
 	if (argc > 1) {
 		if ((argv[1][0] == '-') && (argv[1][1] == 't') ) {

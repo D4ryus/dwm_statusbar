@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+// to catch SIGTERM
+#include <signal.h>
 // input to display error messages
 #include <errno.h>
 // Alsa sound includes to get volume
@@ -32,6 +34,7 @@ struct Info {
 };
 
 void error(char *);
+void quit(int);
 char *fmt_size(uint64_t, char[7]);
 void *update_status(void);
 int pthread_setname_np(pthread_t, char *);
