@@ -90,6 +90,9 @@ update_netmsg(struct Info *st)
 	struct sockaddr_in client_addr;
 	int client_length;
 
+	size_t size;
+	char *new_text;
+
 	usleep((uint)rand() % 100000);
 
 	if ((my_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -109,33 +112,32 @@ update_netmsg(struct Info *st)
 
 	listen(my_socket, 5);
 	client_length = sizeof(client_addr);
+accept_new:
 	connected_socket = accept(my_socket, (struct sockaddr *) &client_addr,
 			       (socklen_t *) &client_length);
 	while (connected_socket) {
 		memset(buffer, '\0', MSG_LENGTH);
-		if (read(connected_socket, buffer, MSG_LENGTH - 1) < 0) {
-			error("could not read");
-		}
-
-		if (buffer[0] == '0') {
+		if (read(connected_socket, buffer, MSG_LENGTH - 1) <= 0) {
 			swap_text(st, NULL);
-		} else {
-			size_t size;
-			char *new_text;
-
-			size = strlen(buffer) + 1;
-			new_text = malloc(sizeof(char) * size);
-			memset(new_text, '\0', size);
-			strncpy(new_text, buffer, size);
-			swap_text(st, new_text);
+			close(connected_socket);
+			goto accept_new;
 		}
+
+		size = strlen(buffer);
+
+		if (buffer[size - 1] == '\n') {
+			buffer[size - 1] = '\0';
+		}
+
+		new_text = malloc(sizeof(char) * (size + 1));
+		memset(new_text, '\0', size);
+		strncpy(new_text, buffer, size);
+		swap_text(st, new_text);
 		if (write(connected_socket, "OK", 2) < 0) {
-			error("could not write");
+			swap_text(st, NULL);
+			close(connected_socket);
+			goto accept_new;
 		}
-
-		connected_socket = accept(my_socket,
-				       (struct sockaddr *) &client_addr,
-				       (socklen_t *) &client_length);
 	}
 	close(connected_socket);
 	close(my_socket);
